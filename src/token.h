@@ -1,0 +1,66 @@
+#ifndef token_h
+#define token_h
+
+typedef enum TokenType {
+  TOKEN_LEFT_PAREN,
+  TOKEN_RIGHT_PAREN,
+  TOKEN_LEFT_BRACE,
+  TOKEN_RIGHT_BRACE,
+  TOKEN_LEFT_BRACKET,
+  TOKEN_RIGHT_BRACKET,
+  TOKEN_COMMA,
+  TOKEN_COLON,
+  TOKEN_DOT,
+  TOKEN_MINUS,
+  TOKEN_PLUS,
+  TOKEN_SEMICOLON,
+  TOKEN_SLASH,
+  TOKEN_STAR,
+  TOKEN_ASSING,
+  TOKEN_QUESTION_MARK,
+  TOKEN_PIPE,
+
+  TOKEN_IDENTIFIER,
+  TOKEN_INTEGER,
+  TOKEN_FLOAT,
+  TOKEN_BOOLEAN,
+  TOKEN_STRING,
+  TOKEN_VOID,
+
+  TOKEN_IF,
+  TOKEN_ELSE,
+
+  TOKEN_NOT,
+  TOKEN_AND,
+  TOKEN_OR,
+  TOKEN_EQUAL,
+  TOKEN_GREATER,
+  TOKEN_GREATER_EQUAL,
+  TOKEN_LESS,
+  TOKEN_LESS_EQUAL,
+
+  TOKEN_NIL,
+  TOKEN_FALSE,
+  TOKEN_TRUE,
+
+  TOKEN_FOR,
+  TOKEN_WHILE,
+
+  TOKEN_VAR,
+  TOKEN_PRINT,
+  TOKEN_RETURN,
+
+  TOKEN_STRUCT,
+  TOKEN_FUN,
+
+  TOKEN_EOF,
+} TokenType;
+
+typedef struct Token {
+  TokenType type;
+  const char *lexeme;
+} Token;
+
+Token token_create(TokenType type, const char *lexeme);
+
+#endif

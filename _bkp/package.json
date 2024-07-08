@@ -1,0 +1,17 @@
+{
+  "name": "eq-js",
+  "version": "0.0.0",
+  "license": "MIT",
+  "type": "module",
+  "devDependencies": {
+    "@babel/generator": "^7.24.7",
+    "@babel/template": "^7.24.7",
+    "@babel/types": "^7.24.7",
+    "@rollup/plugin-commonjs": "^26.0.1",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/pluginutils": "^5.1.0",
+    "@types/node": "^20.14.9",
+    "nodemon": "^3.1.4",
+    "rollup": "^4.18.0"
+  }
+}

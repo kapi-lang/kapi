@@ -1,0 +1,13 @@
+{
+  "javascript.preferences.quoteStyle": "single",
+  "javascript.format.semicolons": "insert",
+  "javascript.format.enable": true,
+  "js/ts.implicitProjectConfig.checkJs": true,
+  "C_Cpp.default.compileCommands": "build/compile_commands.json",
+  "cmake.debugConfig": {
+    "cwd": "${workspaceFolder}",
+    "args": [
+      "playground.eq",
+    ],
+  },
+}
