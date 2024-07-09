@@ -11,28 +11,45 @@
 
 typedef struct Expression Expression;
 
-typedef struct LiteralExpression {
+typedef struct Identifier {
+  const char *name;
+} Identifier;
+
+typedef struct Literal {
   TokenType type;
   union {
     bool boolean;
     double number;
     const char *string;
   } as;
-} LiteralExpression;
+} Literal;
+
+typedef struct UpdateExpression {
+  const char *operator;
+  Expression *argument;
+  bool prefix;
+} UpdateExpression;
 
 typedef struct UnaryExpression {
-  Token operator;
+  const char *operator;
   Expression *right;
+  bool prefix;
 } UnaryExpression;
+
+typedef struct LogicalExpression {
+  Expression *left;
+  const char *operator;
+  Expression *right;
+} LogicalExpression;
 
 typedef struct BinaryExpression {
   Expression *left;
-  Token operator;
+  const char *operator;
   Expression *right;
 } BinaryExpression;
 
 typedef struct AssignmentExpression {
-  Token left;
+  Expression *left;
   Expression *right;
 } AssignmentExpression;
 
@@ -41,29 +58,102 @@ typedef struct GroupExpression {
 } GroupExpression;
 
 typedef struct CallExpression {
-  Token callee;
+  Identifier callee;
   Expression **arguments;
   size_t length;
 } CallExpression;
 
+typedef struct ObjectProperty {
+  Identifier key;
+  Expression *value;
+} ObjectProperty;
+
+typedef struct ObjectExpression {
+  ObjectProperty **properties;
+  size_t length;
+} ObjectExpression;
+
 typedef enum ExpressionType {
+  EXPRESSION_IDENTIFIER,
   EXPRESSION_LITERAL,
   EXPRESSION_UNARY,
+  EXPRESSION_UPDATE,
+  EXPRESSION_LOGICAL,
   EXPRESSION_BINARY,
   EXPRESSION_ASSIGNMENT,
   EXPRESSION_GROUP,
   EXPRESSION_CALL,
+  EXPRESSION_OBJECT,
 } ExpressionType;
 
 struct Expression {
   ExpressionType type;
   union {
-    LiteralExpression *literal;
+    Identifier *identifier;
+    Literal *literal;
     UnaryExpression *unary;
+    UpdateExpression *update;
+    LogicalExpression *logical;
     BinaryExpression *binary;
     GroupExpression *group;
     AssignmentExpression *assignment;
     CallExpression *call;
+    ObjectExpression *object;
+  } as;
+};
+
+//// Declaration
+
+typedef struct DeclarationStatement DeclarationStatement;
+
+typedef enum TypeAnnotationTypes {
+  TYPE_ANNOTATION_REFERENCE,
+  TYPE_ANNOTATION_NUMBER,
+  TYPE_ANNOTATION_BOOLEAN,
+  TYPE_ANNOTATION_STRING,
+} TypeAnnotationTypes;
+
+typedef struct TypeAnnotation {
+  TypeAnnotationTypes type;
+  Identifier typeName;
+} TypeAnnotation;
+
+typedef struct PropertySignature {
+  Identifier key;
+  bool optional;
+  TypeAnnotation *typeAnnotation;
+} PropertySignature;
+
+typedef struct InterfaceDeclaration {
+  Identifier id;
+  PropertySignature **body;
+  size_t length;
+} InterfaceDeclaration;
+
+typedef struct VariableDeclarator {
+  Identifier id;
+  Expression *init;
+} VariableDeclarator;
+
+typedef struct VariableDeclaration {
+  VariableDeclarator **declarations;
+  size_t length;
+} VariableDeclaration;
+
+typedef struct FunctionDeclaration FunctionDeclaration;
+
+typedef enum DeclarationType {
+  DECLARATION_INTERFACE,
+  DECLARATION_VARIABLE,
+  DECLARATION_FUNCTION,
+} DeclarationType;
+
+struct DeclarationStatement {
+  DeclarationType type;
+  union {
+    InterfaceDeclaration *interface;
+    VariableDeclaration *variable;
+    FunctionDeclaration *function;
   } as;
 };
 
@@ -75,58 +165,31 @@ typedef struct ExpressionStatement {
   Expression *expression;
 } ExpressionStatement;
 
+typedef struct BlockStatement {
+  Statement **body;
+  size_t length;
+} BlockStatement;
+
 typedef enum StatementType {
+  STATEMENT_EMPTY,
+  STATEMENT_DECLARATION,
   STATEMENT_EXPRESSION,
+  STATEMENT_BLOCK,
 } StatementType;
 
 struct Statement {
   StatementType type;
   union {
+    DeclarationStatement *declaration;
     ExpressionStatement *expression;
-  } as;
-};
-
-//// Declaration
-
-typedef struct Declaration Declaration;
-
-typedef struct VariableDeclaration {
-  Token id;
-  Expression *init;
-} VariableDeclaration;
-
-typedef struct FunctionDeclaration FunctionDeclaration;
-
-typedef enum DeclarationType {
-  DECLARATION_VARIABLE,
-  DECLARATION_FUNCTION,
-} DeclarationType;
-
-struct Declaration {
-  DeclarationType type;
-  union {
-    VariableDeclaration *variable;
-    FunctionDeclaration *function;
+    BlockStatement *block;
   } as;
 };
 
 //// Program
 
-typedef enum ProgramBodyType {
-  PROGRAM_BODY_DECLARATION,
-  PROGRAM_BODY_STATEMENT,
-} ProgramBodyType;
-
-typedef struct ProgramBody {
-  ProgramBodyType type;
-  union {
-    Declaration *declaration;
-    Statement *statement;
-  } as;
-} ProgramBody;
-
 typedef struct ParserOutput {
-  ProgramBody *body;
+  Statement **body;
   size_t length;
 } ParserOutput;
 

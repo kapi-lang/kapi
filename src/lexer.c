@@ -40,19 +40,21 @@ static bool char_is_alpha(char c) {
 
 static bool char_is_digit(char c) { return c >= '0' && c <= '9'; }
 
-void lexer_add_token(LexerOutput *output, Token token) {
+static void lexer_add_token(LexerOutput *output, Token token) {
   const size_t index = output->length++;
 
   output->tokens = ARRAY_RESIZE(Token, output->tokens, output->length);
 
   output->tokens[index] = token;
 
-  LOG_DEBUG("[lexer] token: (%d) '%s' \n", token.type, token.lexeme);
-
   lexer_commit();
+
+  LOG_DEBUG("[lexer::add_token] (%d) %s\n", token.type, token.lexeme);
 }
 
 static Token lexer_string() {
+  (void)lexer_commit();
+
   while (lexer_peek() != '"' && !lexer_is_eof()) {
     if (lexer_peek() == '\n') {
       lexer.line++;
@@ -65,10 +67,10 @@ static Token lexer_string() {
     EXCEPTION("unterminated string\n");
   }
 
-  /* The closing quote. */
-  lexer_advance();
-
   const size_t length = (size_t)(lexer.cursor - lexer.start);
+
+  /* The closing quote. */
+  (void)lexer_advance();
 
   char *lexeme = STRING_NEW(char, length);
 
@@ -117,6 +119,18 @@ static TokenType lexer_check_identifier(int start, int length, const char *rest,
 
 static TokenType lexer_identifier_type() {
   switch (lexer.start[0]) {
+  case 'I':
+    return lexer_check_identifier(1, 6, "nteger", TOKEN_INTEGER);
+
+  case 'F':
+    return lexer_check_identifier(1, 4, "loat", TOKEN_FLOAT);
+
+  case 'B':
+    return lexer_check_identifier(1, 6, "oolean", TOKEN_BOOLEAN);
+
+  case 'S':
+    return lexer_check_identifier(1, 5, "tring", TOKEN_STRING);
+
   case 'a':
     return lexer_check_identifier(1, 2, "nd", TOKEN_AND);
 
@@ -134,6 +148,9 @@ static TokenType lexer_identifier_type() {
 
   case 'p':
     return lexer_check_identifier(1, 4, "rint", TOKEN_PRINT);
+
+  case 's':
+    return lexer_check_identifier(1, 5, "truct", TOKEN_STRUCT);
 
   case 'n': {
     switch (lexer.start[1]) {

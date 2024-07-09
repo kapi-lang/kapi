@@ -1,62 +1,27 @@
-# tudo isso aqui abaixo do comentário
-# está funcionando
+struct Person {
+  title?: String;
+  name: String;
+  age: Integer;
+}
 
-print(nil);
-a = nil;
-nil + nil;
--nil;
-(nil + nil);
-(nil * nil);
-(nil / nil);
+var a = Person {
+  title = nil,
+  name = "Equal",
+  age = 29,
+};
 
-print(1);
-a = 1;
-1 + 1;
--1;
-(1 + 1);
-(1 * 1);
-(1 / 1);
+--a;
+++a;
+a--;
+a++;
 
-print(1.2);
-a = 1.2;
-1.2 + 1.2;
--1.2;
-(1.2 + 1.2);
-(1.2 * 1.2);
-(1.2 / 1.2);
+; # empty statement
 
-print(true);
-a = true;
-true + true;
--true;
-(true + true);
-(true * true);
-(true / true);
+{
+  var a = 1;
 
-print(false);
-a = false;
-false + false;
--false;
-(false + false);
-(false * false);
-(false / false);
+  {
+    var a = 1;
+  }
 
-var a;
-var a = 1;
-
-1 eq 1;
-1 not 1;
-
-1 gt 1;
-1 gte 1;
-1 lt 1;
-1 lte 1;
-
-"equal";
-"equal
-LINE
-";
-true;
-false;
-1;
-1.2;
+}

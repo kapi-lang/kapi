@@ -1,20 +1,51 @@
-# New Programming Langue
+Rascunho explicação:
+
+```
+====
+C -> C++
+JS -> EQ -> TS
+====
+
+Dores:
+- Typescript muito complexo
+- Typescript é burlável (any everywhere)
+- TS ou JS build para versões antigas add muito polyfill
+- Polyfill não é performático
+- Core-JS não é otimizado para build (treeshake)
+- Bundle de 1 MB+
+- Muito disposito com browser antigo (Safari 5, Opera 9 ...)
+
+Possíveis soluções
+- Core-JS com build otimizado (ESM code)
+- Processo de build mais inteligente no Polyfill
+  - Core-JS de muitos níveis (Polyfill Base, Polyill Base + allSettled)
+- Criar uma linguagem que gera JS otimizado (podendo incluir polyfill ou não)
+
+// Input
+[].forEach((item, index)=> {
+
+})
+
+// Babel Input: for (const item of array)
+// Output
+for (var i = 0; i < arr.length); i++) {
+
+}
+```
+
+# Language Definitions
 
 ## TODO
 
+### Type-Checker
+
 ### Expressions
 
-- ObjectExpression
 - ArrayExpression
 - MemberExpression
-- UpdateExpression ( a++ or ++a or --a or a--)
-- LogicalExpression ( && or || ) => and, or
 - SequenceExpression ( Expression,Expression )
 
 ### Statements
-
-- EmptyStatement ( <empty line>; )
-- BlockStatement
 
 Control Flow
 

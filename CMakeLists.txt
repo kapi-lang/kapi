@@ -33,6 +33,16 @@ include_directories(${PROJECT_SOURCE_DIR}/src)
 file(GLOB_RECURSE PROJECT_HEADERS "src/*.h")
 file(GLOB_RECURSE PROJECT_SOURCES "src/*.c")
 
+
+set(BUILD_SHARED_LIBS OFF)
+FetchContent_Declare(
+  json-c
+  GIT_REPOSITORY https://github.com/json-c/json-c.git
+  GIT_TAG        json-c-0.17-20230812
+)
+FetchContent_MakeAvailable(json-c)
+set(BUILD_SHARED_LIBS ON)
+
 add_executable(
   ${PROJECT_NAME}
 
@@ -40,6 +50,8 @@ add_executable(
   ${PROJECT_SOURCES}
 )
 
+target_link_libraries(${PROJECT_NAME} PRIVATE json-c)
+
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-  target_compile_definitions(${PROJECT_NAME} PUBLIC DEBUG)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE DEBUG)
 endif()

@@ -60,3 +60,43 @@ true;
 false;
 1;
 1.2;
+
+var a = 1;
+var a = nil;
+var a = 2.5;
+var a = false;
+var a = true;
+
+var a = -1;
+var a = 1 + 1;
+var a = (1 + 1);
+
+a = 2;
+
+struct Person {
+  title?: String;
+  name: String;
+  age: Integer;
+}
+
+var a = Person {
+  title = nil,
+  name = "Equal",
+  age = 29,
+};
+
+--a;
+++a;
+a--;
+a++;
+
+; # empty statement
+
+{
+  var a = 1;
+
+  {
+    var a = 1;
+  }
+
+}
