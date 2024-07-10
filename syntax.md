@@ -1,6 +1,7 @@
 Rascunho explicação:
 
 ```
+
 ====
 C -> C++
 JS -> EQ -> TS
@@ -9,6 +10,7 @@ JS -> EQ -> TS
 Dores:
 - Typescript muito complexo
 - Typescript é burlável (any everywhere)
+
 - TS ou JS build para versões antigas add muito polyfill
 - Polyfill não é performático
 - Core-JS não é otimizado para build (treeshake)
@@ -42,28 +44,12 @@ for (var i = 0; i < arr.length); i++) {
 ### Expressions
 
 - ArrayExpression
-- MemberExpression
-- SequenceExpression ( Expression,Expression )
 
 ### Statements
 
-Control Flow
-
-- ReturnStatement
-- BreakStatement
-- ContinueStatement
-
 Choice
 
-- IfStatement
 - SwitchStatement
-
-Loop
-
-- DoWhileStatement
-- WhileStatement
-- ForOfStatement
-- ForStatement
 
 Exceptions
 
@@ -122,19 +108,19 @@ var person = {
 input:
 
 ```
-void greet(Person person) {
+function greet(Person person) Void {
   print(person.name + ", " + person.age);
 }
 
-void greet(String person) {
+function greet(String person) Void {
   print(person);
 }
 
-Integer sum(Integer a, Integer b) {
+function sum(Integer a, Integer b) Integer {
   return a + b;
 }
 
-Float sum(Float a, Float b) {
+function sum(Float a, Float b) Float {
   return a + b;
 }
 ```

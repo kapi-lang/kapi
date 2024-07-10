@@ -78,7 +78,7 @@ static Token lexer_string() {
 
   lexeme[length] = '\0';
 
-  return token_create(TOKEN_STRING, lexeme);
+  return token_create(TOKEN_STRING, lexeme, lexer.line, lexer.column);
 }
 
 static Token lexer_number() {
@@ -104,7 +104,7 @@ static Token lexer_number() {
 
   lexeme[length] = '\0';
 
-  return token_create(type, lexeme);
+  return token_create(type, lexeme, lexer.line, lexer.column);
 }
 
 static TokenType lexer_check_identifier(int start, int length, const char *rest,
@@ -119,29 +119,88 @@ static TokenType lexer_check_identifier(int start, int length, const char *rest,
 
 static TokenType lexer_identifier_type() {
   switch (lexer.start[0]) {
+  case 'N':
+    return lexer_check_identifier(1, 5, "umber", TOKEN_TYPE_NUMBER);
+
+  case 'V':
+    return lexer_check_identifier(1, 3, "oid", TOKEN_TYPE_VOID);
+
   case 'I':
-    return lexer_check_identifier(1, 6, "nteger", TOKEN_INTEGER);
+    return lexer_check_identifier(1, 6, "nteger", TOKEN_TYPE_INTEGER);
 
   case 'F':
-    return lexer_check_identifier(1, 4, "loat", TOKEN_FLOAT);
+    return lexer_check_identifier(1, 4, "loat", TOKEN_TYPE_FLOAT);
 
   case 'B':
-    return lexer_check_identifier(1, 6, "oolean", TOKEN_BOOLEAN);
+    return lexer_check_identifier(1, 6, "oolean", TOKEN_TYPE_BOOLEAN);
 
   case 'S':
-    return lexer_check_identifier(1, 5, "tring", TOKEN_STRING);
+    return lexer_check_identifier(1, 5, "tring", TOKEN_TYPE_STRING);
 
   case 'a':
     return lexer_check_identifier(1, 2, "nd", TOKEN_AND);
 
-  case 'e':
-    return lexer_check_identifier(1, 1, "q", TOKEN_EQUAL);
+  case 'b':
+    return lexer_check_identifier(1, 4, "reak", TOKEN_BREAK);
 
-  case 't':
-    return lexer_check_identifier(1, 3, "rue", TOKEN_TRUE);
+  case 'c':
+    return lexer_check_identifier(1, 7, "ontinue", TOKEN_CONTINUE);
 
-  case 'f':
-    return lexer_check_identifier(1, 4, "alse", TOKEN_FALSE);
+  case 'r':
+    return lexer_check_identifier(1, 5, "eturn", TOKEN_RETURN);
+
+  case 'o': {
+    if (lexer.cursor - lexer.start > 1) {
+      switch (lexer.start[1]) {
+      case 'f':
+        return lexer_check_identifier(1, 1, "f", TOKEN_OF);
+      case 'r':
+        return lexer_check_identifier(1, 1, "r", TOKEN_OR);
+      }
+    }
+    break;
+  }
+
+  case 'e': {
+    if (lexer.cursor - lexer.start > 1) {
+      switch (lexer.start[1]) {
+      case 'q':
+        return lexer_check_identifier(1, 1, "q", TOKEN_EQUAL);
+      case 'l':
+        return lexer_check_identifier(1, 3, "lse", TOKEN_ELSE);
+      }
+    }
+    break;
+  }
+
+  case 't': {
+    if (lexer.cursor - lexer.start > 1) {
+      switch (lexer.start[1]) {
+      case 'o':
+        return lexer_check_identifier(1, 1, "o", TOKEN_TO);
+      case 'r':
+        return lexer_check_identifier(1, 3, "rue", TOKEN_TRUE);
+      }
+    }
+    break;
+  }
+
+  case 'i':
+    return lexer_check_identifier(1, 1, "f", TOKEN_IF);
+
+  case 'f': {
+    if (lexer.cursor - lexer.start > 1) {
+      switch (lexer.start[1]) {
+      case 'a':
+        return lexer_check_identifier(1, 4, "alse", TOKEN_FALSE);
+      case 'o':
+        return lexer_check_identifier(1, 2, "or", TOKEN_FOR);
+      case 'u':
+        return lexer_check_identifier(1, 7, "unction", TOKEN_FUNCTION);
+      }
+    }
+    break;
+  }
 
   case 'v':
     return lexer_check_identifier(1, 2, "ar", TOKEN_VAR);
@@ -153,33 +212,40 @@ static TokenType lexer_identifier_type() {
     return lexer_check_identifier(1, 5, "truct", TOKEN_STRUCT);
 
   case 'n': {
-    switch (lexer.start[1]) {
-    case 'i':
-      return lexer_check_identifier(1, 2, "il", TOKEN_NIL);
-    case 'o':
-      return lexer_check_identifier(1, 2, "ot", TOKEN_NOT);
+    if (lexer.cursor - lexer.start > 1) {
+      switch (lexer.start[1]) {
+      case 'i':
+        return lexer_check_identifier(1, 2, "il", TOKEN_NIL);
+      case 'o':
+        return lexer_check_identifier(1, 2, "ot", TOKEN_NOT);
+      }
     }
-
     break;
   }
 
   case 'g': {
-    if (lexer.cursor - lexer.start == 2) {
-      return lexer_check_identifier(1, 1, "t", TOKEN_GREATER);
-    } else if (lexer.cursor - lexer.start == 3) {
+    if (lexer.cursor - lexer.start == 3) {
       return lexer_check_identifier(1, 2, "te", TOKEN_GREATER_EQUAL);
+    } else if (lexer.cursor - lexer.start == 2) {
+      return lexer_check_identifier(1, 1, "t", TOKEN_GREATER);
     }
     break;
   }
 
   case 'l': {
-    if (lexer.cursor - lexer.start == 2) {
-      return lexer_check_identifier(1, 1, "t", TOKEN_LESS);
-    } else if (lexer.cursor - lexer.start == 3) {
+    if (lexer.cursor - lexer.start == 3) {
       return lexer_check_identifier(1, 2, "te", TOKEN_LESS_EQUAL);
+    } else if (lexer.cursor - lexer.start == 2) {
+      return lexer_check_identifier(1, 1, "t", TOKEN_LESS);
     }
     break;
   }
+
+  case 'w':
+    return lexer_check_identifier(1, 4, "hile", TOKEN_WHILE);
+
+  case 'd':
+    return lexer_check_identifier(1, 5, "ownto", TOKEN_DOWNTO);
   }
 
   return TOKEN_IDENTIFIER;
@@ -197,7 +263,8 @@ static Token lexer_identifier() {
 
   lexeme[length] = '\0';
 
-  return token_create(lexer_identifier_type(), lexeme);
+  return token_create(lexer_identifier_type(), lexeme, lexer.line,
+                      lexer.column);
 }
 
 LexerOutput *lexer_run(const char *source) {
@@ -223,7 +290,7 @@ LexerOutput *lexer_run(const char *source) {
     case '#':
       /* A comment goes until the end of the line. */
       while (lexer_peek() != '\n' && !lexer_is_eof())
-        lexer_advance();
+        (void)lexer_advance();
       lexer_commit();
       break;
 
@@ -231,56 +298,300 @@ LexerOutput *lexer_run(const char *source) {
       lexer_add_token(output, lexer_string());
       break;
 
-    case '+':
-      lexer_add_token(output, token_create(TOKEN_PLUS, "+"));
+    case '~':
+      lexer_add_token(output, token_create(TOKEN_BITWISE_NOT, "~", lexer.line,
+                                           lexer.column));
       break;
-    case '-':
-      lexer_add_token(output, token_create(TOKEN_MINUS, "-"));
+
+    case '%':
+      switch (lexer_peek()) {
+      case '=': {
+        (void)lexer_advance();
+        lexer_add_token(output, token_create(TOKEN_ASSIGN_MODULUS,
+                                             "%=", lexer.line, lexer.column));
+        break;
+      }
+
+      default:
+
+        lexer_add_token(
+            output, token_create(TOKEN_MODULUS, "%", lexer.line, lexer.column));
+        break;
+      }
       break;
-    case '/':
-      lexer_add_token(output, token_create(TOKEN_SLASH, "/"));
+
+    case '&':
+      switch (lexer_peek()) {
+      case '=': {
+        (void)lexer_advance();
+        lexer_add_token(output, token_create(TOKEN_ASSIGN_BITWISE_AND,
+                                             "&=", lexer.line, lexer.column));
+        break;
+      }
+
+      default:
+        lexer_add_token(output, token_create(TOKEN_BITWISE_AND, "&", lexer.line,
+                                             lexer.column));
+        break;
+      }
       break;
-    case '*':
-      lexer_add_token(output, token_create(TOKEN_STAR, "*"));
-      break;
-    case ';':
-      lexer_add_token(output, token_create(TOKEN_SEMICOLON, ";"));
-      break;
-    case ',':
-      lexer_add_token(output, token_create(TOKEN_COMMA, ","));
-      break;
-    case ':':
-      lexer_add_token(output, token_create(TOKEN_COLON, ":"));
-      break;
-    case '.':
-      lexer_add_token(output, token_create(TOKEN_DOT, "."));
-      break;
-    case '=':
-      lexer_add_token(output, token_create(TOKEN_ASSING, "="));
-      break;
-    case '?':
-      lexer_add_token(output, token_create(TOKEN_QUESTION_MARK, "?"));
-      break;
+
     case '|':
-      lexer_add_token(output, token_create(TOKEN_PIPE, "|"));
+      switch (lexer_peek()) {
+      case '=': {
+        (void)lexer_advance();
+        lexer_add_token(output, token_create(TOKEN_ASSIGN_BITWISE_OR,
+                                             "|=", lexer.line, lexer.column));
+        break;
+      }
+
+      default:
+        lexer_add_token(output, token_create(TOKEN_BITWISE_OR, "|", lexer.line,
+                                             lexer.column));
+        break;
+      }
       break;
+
+    case '^':
+      switch (lexer_peek()) {
+      case '=': {
+        (void)lexer_advance();
+        lexer_add_token(output, token_create(TOKEN_ASSIGN_BITWISE_XOR,
+                                             "^=", lexer.line, lexer.column));
+        break;
+      }
+
+      default:
+        lexer_add_token(output, token_create(TOKEN_BITWISE_XOR, "^", lexer.line,
+                                             lexer.column));
+        break;
+      }
+      break;
+
+    case '<': {
+      switch (lexer_peek()) {
+      case '<':
+        (void)lexer_advance();
+
+        switch (lexer_peek()) {
+        case '=':
+          (void)lexer_advance();
+          lexer_add_token(output,
+                          token_create(TOKEN_ASSIGN_BITWISE_LEFT_SHIFT,
+                                       "<<=", lexer.line, lexer.column));
+          break;
+
+        default:
+          lexer_add_token(output, token_create(TOKEN_BITWISE_LEFT_SHIFT, "<<",
+                                               lexer.line, lexer.column));
+          break;
+        }
+        break;
+      }
+      break;
+    }
+
+    case '>': {
+      switch (lexer_peek()) {
+      case '>':
+        (void)lexer_advance();
+
+        switch (lexer_peek()) {
+        case '=': {
+          (void)lexer_advance();
+          lexer_add_token(output,
+                          token_create(TOKEN_ASSIGN_BITWISE_RIGHT_SHIFT,
+                                       ">>=", lexer.line, lexer.column));
+
+          break;
+        }
+
+        case '>': {
+          (void)lexer_advance();
+          switch (lexer_peek()) {
+          case '=':
+            (void)lexer_advance();
+            lexer_add_token(
+                output, token_create(TOKEN_ASSIGN_BITWISE_UNSIGNED_RIGHT_SHIFT,
+                                     ">>>=", lexer.line, lexer.column));
+            break;
+          default:
+            lexer_add_token(output,
+                            token_create(TOKEN_BITWISE_UNSIGNED_RIGHT_SHIFT,
+                                         ">>>", lexer.line, lexer.column));
+            break;
+          }
+          break;
+        }
+
+        default: {
+          lexer_add_token(output, token_create(TOKEN_BITWISE_RIGHT_SHIFT, ">>",
+                                               lexer.line, lexer.column));
+          break;
+        }
+        }
+        break;
+      }
+      break;
+    }
+
+    case '+': {
+      switch (lexer_peek()) {
+      case '+': {
+        (void)lexer_advance();
+        lexer_add_token(output, token_create(TOKEN_INCREMENT, "++", lexer.line,
+                                             lexer.column));
+        break;
+      }
+
+      case '=': {
+        (void)lexer_advance();
+        lexer_add_token(output, token_create(TOKEN_ASSIGN_INCREMENT,
+                                             "+=", lexer.line, lexer.column));
+        break;
+      }
+
+      default:
+        lexer_add_token(
+            output, token_create(TOKEN_PLUS, "+", lexer.line, lexer.column));
+        break;
+      }
+      break;
+    }
+
+    case '-': {
+      switch (lexer_peek()) {
+      case '-': {
+        (void)lexer_advance();
+        lexer_add_token(output, token_create(TOKEN_DECREMENT, "-", lexer.line,
+                                             lexer.column));
+        break;
+      }
+
+      case '=': {
+        (void)lexer_advance();
+        lexer_add_token(output, token_create(TOKEN_ASSIGN_DECREMENT,
+                                             "-=", lexer.line, lexer.column));
+        break;
+      }
+
+      default:
+        lexer_add_token(
+            output, token_create(TOKEN_MINUS, "-", lexer.line, lexer.column));
+        break;
+      }
+      break;
+    }
+
+    case '/': {
+      switch (lexer_peek()) {
+      case '=': {
+        (void)lexer_advance();
+        lexer_add_token(output, token_create(TOKEN_ASSIGN_DIVIDE,
+                                             "/=", lexer.line, lexer.column));
+        break;
+      }
+
+      default:
+        lexer_add_token(
+            output, token_create(TOKEN_SLASH, "/", lexer.line, lexer.column));
+        break;
+      }
+      break;
+    }
+
+    case '*': {
+      switch (lexer_peek()) {
+      case '=': {
+        (void)lexer_advance();
+        lexer_add_token(output, token_create(TOKEN_ASSIGN_MULTIPLY,
+                                             "*=", lexer.line, lexer.column));
+        break;
+      }
+
+      case '*': {
+        (void)lexer_advance();
+        switch (lexer_peek()) {
+        case '=':
+          (void)lexer_advance();
+          lexer_add_token(output,
+                          token_create(TOKEN_ASSIGN_EXPONENTIATION,
+                                       "**=", lexer.line, lexer.column));
+          break;
+        default:
+          lexer_add_token(output, token_create(TOKEN_EXPONENTIATION, "**",
+                                               lexer.line, lexer.column));
+          break;
+        }
+        break;
+      }
+
+      default:
+        lexer_add_token(
+            output, token_create(TOKEN_STAR, "*", lexer.line, lexer.column));
+        break;
+      }
+      break;
+    }
+
+    case ';':
+      lexer_add_token(
+          output, token_create(TOKEN_SEMICOLON, ";", lexer.line, lexer.column));
+      break;
+
+    case ',':
+      lexer_add_token(output,
+                      token_create(TOKEN_COMMA, ",", lexer.line, lexer.column));
+      break;
+
+    case ':':
+      lexer_add_token(output,
+                      token_create(TOKEN_COLON, ":", lexer.line, lexer.column));
+      break;
+
+    case '.':
+      lexer_add_token(output,
+                      token_create(TOKEN_DOT, ".", lexer.line, lexer.column));
+      break;
+
+    case '=':
+      lexer_add_token(
+          output, token_create(TOKEN_ASSIGN, "=", lexer.line, lexer.column));
+      break;
+
+    case '?':
+      lexer_add_token(output, token_create(TOKEN_QUESTION_MARK, "?", lexer.line,
+                                           lexer.column));
+      break;
+
     case '(':
-      lexer_add_token(output, token_create(TOKEN_LEFT_PAREN, "("));
+      lexer_add_token(output, token_create(TOKEN_LEFT_PAREN, "(", lexer.line,
+                                           lexer.column));
       break;
+
     case ')':
-      lexer_add_token(output, token_create(TOKEN_RIGHT_PAREN, ")"));
+      lexer_add_token(output, token_create(TOKEN_RIGHT_PAREN, ")", lexer.line,
+                                           lexer.column));
       break;
+
     case '{':
-      lexer_add_token(output, token_create(TOKEN_LEFT_BRACE, "{"));
+      lexer_add_token(output, token_create(TOKEN_LEFT_BRACE, "{", lexer.line,
+                                           lexer.column));
       break;
+
     case '}':
-      lexer_add_token(output, token_create(TOKEN_RIGHT_BRACE, "}"));
+      lexer_add_token(output, token_create(TOKEN_RIGHT_BRACE, "}", lexer.line,
+                                           lexer.column));
       break;
+
     case '[':
-      lexer_add_token(output, token_create(TOKEN_LEFT_BRACKET, "["));
+      lexer_add_token(output, token_create(TOKEN_LEFT_BRACKET, "[", lexer.line,
+                                           lexer.column));
       break;
+
     case ']':
-      lexer_add_token(output, token_create(TOKEN_RIGHT_BRACKET, "]"));
+      lexer_add_token(output, token_create(TOKEN_RIGHT_BRACKET, "]", lexer.line,
+                                           lexer.column));
       break;
 
     default:
@@ -293,7 +604,8 @@ LexerOutput *lexer_run(const char *source) {
     }
   }
 
-  lexer_add_token(output, token_create(TOKEN_EOF, "EOF"));
+  lexer_add_token(output,
+                  token_create(TOKEN_EOF, "EOF", lexer.line, lexer.column));
 
   return output;
 }

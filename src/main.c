@@ -1,10 +1,11 @@
 #include <stdio.h>
 
-#include "ast.h"
 #include "file.h"
 #include "lexer.h"
 #include "macros.h"
 #include "parser.h"
+
+#include "js/ast.h"
 
 int main(int argc, char const *argv[]) {
   const char *filename = argv[1];

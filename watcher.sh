@@ -13,7 +13,7 @@ if [[ "$COMMAND" = "c-run" ]]; then
 fi
 
 if [[ "$COMMAND" = "c-build" ]]; then
-  ls src/*.c src/*.h build/compile_commands.json | entr bash -c "reset && $C_BUILD"
+  ls -R src/*.c src/*.h build/compile_commands.json | entr bash -c "reset && $C_BUILD"
 fi
 
 if [[ "$COMMAND" = "js-generate" ]]; then

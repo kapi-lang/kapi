@@ -7,9 +7,11 @@
 #include "lexer.h"
 #include "token.h"
 
-//// Expression
-
 typedef struct Expression Expression;
+typedef struct DeclarationStatement DeclarationStatement;
+typedef struct Statement Statement;
+
+//// Expression
 
 typedef struct Identifier {
   const char *name;
@@ -25,31 +27,32 @@ typedef struct Literal {
 } Literal;
 
 typedef struct UpdateExpression {
-  const char *operator;
+  TokenType operator;
   Expression *argument;
   bool prefix;
 } UpdateExpression;
 
 typedef struct UnaryExpression {
-  const char *operator;
+  TokenType operator;
   Expression *right;
   bool prefix;
 } UnaryExpression;
 
 typedef struct LogicalExpression {
   Expression *left;
-  const char *operator;
+  TokenType operator;
   Expression *right;
 } LogicalExpression;
 
 typedef struct BinaryExpression {
   Expression *left;
-  const char *operator;
+  TokenType operator;
   Expression *right;
 } BinaryExpression;
 
 typedef struct AssignmentExpression {
   Expression *left;
+  TokenType operator;
   Expression *right;
 } AssignmentExpression;
 
@@ -58,7 +61,7 @@ typedef struct GroupExpression {
 } GroupExpression;
 
 typedef struct CallExpression {
-  Identifier callee;
+  Expression *callee;
   Expression **arguments;
   size_t length;
 } CallExpression;
@@ -73,6 +76,11 @@ typedef struct ObjectExpression {
   size_t length;
 } ObjectExpression;
 
+typedef struct MemberExpression {
+  Expression *object;
+  Expression *property;
+} MemberExpression;
+
 typedef enum ExpressionType {
   EXPRESSION_IDENTIFIER,
   EXPRESSION_LITERAL,
@@ -84,6 +92,7 @@ typedef enum ExpressionType {
   EXPRESSION_GROUP,
   EXPRESSION_CALL,
   EXPRESSION_OBJECT,
+  EXPRESSION_MEMBER,
 } ExpressionType;
 
 struct Expression {
@@ -99,18 +108,20 @@ struct Expression {
     AssignmentExpression *assignment;
     CallExpression *call;
     ObjectExpression *object;
+    MemberExpression *member;
   } as;
 };
 
 //// Declaration
 
-typedef struct DeclarationStatement DeclarationStatement;
-
 typedef enum TypeAnnotationTypes {
   TYPE_ANNOTATION_REFERENCE,
   TYPE_ANNOTATION_NUMBER,
+  TYPE_ANNOTATION_INTEGER,
+  TYPE_ANNOTATION_FLOAT,
   TYPE_ANNOTATION_BOOLEAN,
   TYPE_ANNOTATION_STRING,
+  TYPE_ANNOTATION_VOID,
 } TypeAnnotationTypes;
 
 typedef struct TypeAnnotation {
@@ -140,7 +151,18 @@ typedef struct VariableDeclaration {
   size_t length;
 } VariableDeclaration;
 
-typedef struct FunctionDeclaration FunctionDeclaration;
+typedef struct FunctionParamDeclaration {
+  Identifier id;
+  TypeAnnotation *typeAnnotation;
+} FunctionParamDeclaration;
+
+typedef struct FunctionDeclaration {
+  Identifier id;
+  TypeAnnotation *returnType;
+  Statement *body;
+  FunctionParamDeclaration **params;
+  size_t length;
+} FunctionDeclaration;
 
 typedef enum DeclarationType {
   DECLARATION_INTERFACE,
@@ -159,8 +181,6 @@ struct DeclarationStatement {
 
 //// Statement
 
-typedef struct Statement Statement;
-
 typedef struct ExpressionStatement {
   Expression *expression;
 } ExpressionStatement;
@@ -170,16 +190,48 @@ typedef struct BlockStatement {
   size_t length;
 } BlockStatement;
 
+typedef struct WhileStatement {
+  Expression *test;
+  Statement *body;
+} WhileStatement;
+
+typedef struct IfStatement {
+  Expression *test;
+  Statement *consequent;
+  Statement *alternate;
+} IfStatement;
+
+typedef struct ForStatement {
+  Expression *left;
+  Expression *right;
+  Statement *body;
+  bool reverse;
+} ForStatement;
+
+typedef struct ReturnStatement {
+  Expression *argument;
+} ReturnStatement;
+
 typedef enum StatementType {
   STATEMENT_EMPTY,
+  STATEMENT_BREAK,
+  STATEMENT_CONTINUE,
   STATEMENT_DECLARATION,
   STATEMENT_EXPRESSION,
   STATEMENT_BLOCK,
+  STATEMENT_WHILE,
+  STATEMENT_IF,
+  STATEMENT_FOR,
+  STATEMENT_RETURN,
 } StatementType;
 
 struct Statement {
   StatementType type;
   union {
+    ReturnStatement *returns;
+    ForStatement *for_loop;
+    WhileStatement *while_loop;
+    IfStatement *condition;
     DeclarationStatement *declaration;
     ExpressionStatement *expression;
     BlockStatement *block;
