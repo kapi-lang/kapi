@@ -74,23 +74,6 @@ var a = (1 + 1);
 
 a = 2;
 
-struct Id {
-  value: String;
-}
-
-struct Person {
-  id: Id;
-  title?: String;
-  name: String;
-  age: Integer;
-}
-
-var a = Person {
-  title = nil,
-  name = "Equal",
-  age = 29,
-};
-
 print(equal.name.toString());
 
 --a;
@@ -123,6 +106,7 @@ a++;
 1 >> 1;
 1 >>> 1;
 1 | 1;
+
 
 x = 1;
 x += 1;
@@ -166,30 +150,86 @@ if (x eq true) {
   var a = 1;
 }
 
-for (item of arr) {
-  print(item);
-}
-
-for (n = 0 to 10) {
-  print(n);
-}
-
-for (n = 0 to limit) {
-  print(n);
-}
-
-for (n = 10 downto 1) {
-  print(n);
-}
-
-function concat(String a, String b) String {
+fn concat(String a, String b) String {
   return a + b;
 }
 
 concat("Hello", "World");
 
-function add(Number a, Number b) Number {
+fn add(Number a, Number b) Number {
   return a + b;
 }
 
 var a = concat(0, 0.5);
+
+String(1);
+String(1.2);
+String(true);
+String(false);
+String(nil);
+String(-1);
+
+Bool(1);
+Int(1.2);
+Float(1);
+
+var a = 1_000;
+
+"Hello" + String(1) + " folks";
+
+print(1)(2);
+
+1 lt 2 lt 4;
+
+## Wrong
+# var a: Int;
+# var a: Bool;
+# var a: Float;
+# var a: String;
+
+## OK
+var a: Int?;
+var a: Bool?;
+var a: Float?;
+var a: String?;
+
+## OK
+var a: Int = 1;
+var a: Bool = false;
+var a: Float = 1.2;
+var a: String = "text";
+
+# Struct Optional Property
+
+struct Id {
+  value: String;
+}
+
+struct Person {
+  id: Id;
+  title: String?;
+  name: String;
+  age: Int;
+}
+
+var a: Person = {
+  title = nil,
+  name = "Equal",
+  age = 29,
+};
+
+for (item in arr) {
+  print(item);
+}
+
+for (n in 1 to 10) {
+ print(n);
+}
+
+for (n in 1 to limit) {
+  print(n);
+}
+
+for (n in 10 downto 1) {
+  print(n);
+}

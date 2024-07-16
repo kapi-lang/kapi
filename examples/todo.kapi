@@ -1,0 +1,60 @@
+# List
+
+var a: Int[] = [ 0 ];
+
+var a: Person[] = [
+  Person {
+    name = "Equal",
+    age = 29,
+  }
+];
+
+# Nested List
+
+var a: Int[][] = [[
+  0
+]];
+
+var a: Person[][] = [[
+  Person {
+    name = "Equal",
+    age = 29,
+  }
+]];
+
+# Dictionary
+
+var a: Dict = Dict {};
+
+var a: Dict = Dict {
+  0 = true,
+  name = "equal",
+  age = 29,
+};
+
+# Async
+
+struct Data {
+  message: String;
+}
+
+enum Result {
+  Ok(Int, Data),
+  Error(Int, String)
+}
+
+async fn do_request(String url) Result {
+  if (Task.cancelled) {
+    return Result.Error(0, "Cancelled");
+  }
+
+  var data: Data = {
+    message = "Success",
+  };
+
+  return Result.Ok(200, data);
+}
+
+var result: Task<Result> = do_request("url");
+
+await result;   # Message

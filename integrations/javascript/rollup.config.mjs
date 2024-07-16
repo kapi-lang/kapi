@@ -1,6 +1,7 @@
 import { defineConfig } from 'rollup';
 import generate from '@babel/generator';
 import * as fs from "node:fs";
+import * as path from "node:path";
 
 export default defineConfig({
   input: "index.js",
@@ -23,7 +24,7 @@ function equal_script() {
     name: "equal-script",
     transform(source, id) {
       try {
-        const ast = fs.readFileSync("../ast.json", { encoding: "utf8" });
+        const ast = fs.readFileSync(path.join("../../", ".kapi", "javascript.ast.json"), { encoding: "utf8" });
 
         const file = generate.default(JSON.parse(ast));
 

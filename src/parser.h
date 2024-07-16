@@ -11,11 +11,18 @@ typedef struct Expression Expression;
 typedef struct DeclarationStatement DeclarationStatement;
 typedef struct Statement Statement;
 
-//// Expression
+typedef struct TypeAnnotation {
+  TokenType type;
+  const char *typeName;
+  bool optional;
+} TypeAnnotation;
 
 typedef struct Identifier {
   const char *name;
+  TypeAnnotation *typeAnnotation;
 } Identifier;
+
+//// Expression
 
 typedef struct Literal {
   TokenType type;
@@ -79,6 +86,7 @@ typedef struct ObjectExpression {
 typedef struct MemberExpression {
   Expression *object;
   Expression *property;
+  bool computed;
 } MemberExpression;
 
 typedef enum ExpressionType {
@@ -114,58 +122,27 @@ struct Expression {
 
 //// Declaration
 
-typedef enum TypeAnnotationTypes {
-  TYPE_ANNOTATION_REFERENCE,
-  TYPE_ANNOTATION_NUMBER,
-  TYPE_ANNOTATION_INTEGER,
-  TYPE_ANNOTATION_FLOAT,
-  TYPE_ANNOTATION_BOOLEAN,
-  TYPE_ANNOTATION_STRING,
-  TYPE_ANNOTATION_VOID,
-} TypeAnnotationTypes;
-
-typedef struct TypeAnnotation {
-  TypeAnnotationTypes type;
-  Identifier typeName;
-} TypeAnnotation;
-
-typedef struct PropertySignature {
-  Identifier key;
-  bool optional;
-  TypeAnnotation *typeAnnotation;
-} PropertySignature;
-
-typedef struct InterfaceDeclaration {
+typedef struct StructDeclaration {
   Identifier id;
-  PropertySignature **body;
+  Identifier **body;
   size_t length;
-} InterfaceDeclaration;
-
-typedef struct VariableDeclarator {
-  Identifier id;
-  Expression *init;
-} VariableDeclarator;
+} StructDeclaration;
 
 typedef struct VariableDeclaration {
-  VariableDeclarator **declarations;
-  size_t length;
-} VariableDeclaration;
-
-typedef struct FunctionParamDeclaration {
   Identifier id;
-  TypeAnnotation *typeAnnotation;
-} FunctionParamDeclaration;
+  Expression *init;
+} VariableDeclaration;
 
 typedef struct FunctionDeclaration {
   Identifier id;
   TypeAnnotation *returnType;
   Statement *body;
-  FunctionParamDeclaration **params;
+  Identifier **params;
   size_t length;
 } FunctionDeclaration;
 
 typedef enum DeclarationType {
-  DECLARATION_INTERFACE,
+  DECLARATION_STRUCT,
   DECLARATION_VARIABLE,
   DECLARATION_FUNCTION,
 } DeclarationType;
@@ -173,7 +150,7 @@ typedef enum DeclarationType {
 struct DeclarationStatement {
   DeclarationType type;
   union {
-    InterfaceDeclaration *interface;
+    StructDeclaration *structure;
     VariableDeclaration *variable;
     FunctionDeclaration *function;
   } as;
@@ -202,7 +179,7 @@ typedef struct IfStatement {
 } IfStatement;
 
 typedef struct ForStatement {
-  Expression *left;
+  Identifier left;
   Expression *right;
   Statement *body;
   bool reverse;

@@ -7,29 +7,29 @@ layout {
         pane {
           name "Lang: EQ"
           command "sh"
-          args "watcher.sh" "eq-input"
+          args "scripts/watcher.sh" "eq-input"
         }
         pane {
           name "AST (based on ESTree Spec)"
           command "sh"
-          args "watcher.sh" "c-run"
+          args "scripts/watcher.sh" "c-run"
         }
         pane {
           name "Lang: JS"
           command "sh"
-          args "watcher.sh" "js-output"
+          args "scripts/watcher.sh" "js-output"
         }
       }
       pane split_direction="vertical" size="40%" {
         pane size="60%" {
           name "C Build"
           command "sh"
-          args "watcher.sh" "c-build"
+          args "scripts/watcher.sh" "c-build"
         }
         pane {
           name "JS Generate"
           command "sh"
-          args "watcher.sh" "js-generate"
+          args "scripts/watcher.sh" "js-generate"
         }
       }
     }

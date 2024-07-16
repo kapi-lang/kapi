@@ -26,7 +26,7 @@ typedef enum TokenType {
   TOKEN_PLUS,
   TOKEN_SLASH,
   TOKEN_STAR,
-  TOKEN_MODULUS,
+  TOKEN_REMAINDER,
   TOKEN_EXPONENTIATION,
   TOKEN_BITWISE_AND,
   TOKEN_BITWISE_OR,
@@ -41,7 +41,7 @@ typedef enum TokenType {
   TOKEN_ASSIGN_DECREMENT,
   TOKEN_ASSIGN_MULTIPLY,
   TOKEN_ASSIGN_DIVIDE,
-  TOKEN_ASSIGN_MODULUS,
+  TOKEN_ASSIGN_REMAINDER,
   TOKEN_ASSIGN_EXPONENTIATION,
   TOKEN_ASSIGN_BITWISE_AND,
   TOKEN_ASSIGN_BITWISE_OR,
@@ -66,6 +66,7 @@ typedef enum TokenType {
   TOKEN_TRUE,
 
   // Types
+  TOKEN_TYPE_STRUCT,
   TOKEN_TYPE_VOID,
   TOKEN_TYPE_NUMBER,
   TOKEN_TYPE_INTEGER,
@@ -79,7 +80,7 @@ typedef enum TokenType {
   TOKEN_ELSE,
   TOKEN_WHILE,
   TOKEN_FOR,
-  TOKEN_OF,
+  TOKEN_IN,
   TOKEN_TO,
   TOKEN_DOWNTO,
   TOKEN_BREAK,
@@ -110,5 +111,7 @@ typedef struct Token {
 
 Token token_create(TokenType type, const char *lexeme, size_t line,
                    size_t column);
+
+const char *token_to_string(TokenType type, const char *extra);
 
 #endif

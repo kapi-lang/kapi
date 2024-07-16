@@ -38,7 +38,7 @@ static bool char_is_alpha(char c) {
   return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 }
 
-static bool char_is_digit(char c) { return c >= '0' && c <= '9'; }
+static bool char_is_digit(char c) { return (c >= '0' && c <= '9') || c == '_'; }
 
 static void lexer_add_token(LexerOutput *output, Token token) {
   const size_t index = output->length++;
@@ -49,7 +49,7 @@ static void lexer_add_token(LexerOutput *output, Token token) {
 
   lexer_commit();
 
-  LOG_DEBUG("[lexer::add_token] (%d) %s\n", token.type, token.lexeme);
+  // LOG_DEBUG("[lexer::add_token] (%d) %s\n", token.type, token.lexeme);
 }
 
 static Token lexer_string() {
@@ -87,7 +87,7 @@ static Token lexer_number() {
   while (char_is_digit(lexer_peek()))
     lexer_advance();
 
-  if (lexer_peek() == '.' && char_is_digit(lexer_next())) {
+  if ((lexer_peek() == '.') && char_is_digit(lexer_next())) {
     type = TOKEN_FLOAT;
 
     lexer_advance();
@@ -119,24 +119,6 @@ static TokenType lexer_check_identifier(int start, int length, const char *rest,
 
 static TokenType lexer_identifier_type() {
   switch (lexer.start[0]) {
-  case 'N':
-    return lexer_check_identifier(1, 5, "umber", TOKEN_TYPE_NUMBER);
-
-  case 'V':
-    return lexer_check_identifier(1, 3, "oid", TOKEN_TYPE_VOID);
-
-  case 'I':
-    return lexer_check_identifier(1, 6, "nteger", TOKEN_TYPE_INTEGER);
-
-  case 'F':
-    return lexer_check_identifier(1, 4, "loat", TOKEN_TYPE_FLOAT);
-
-  case 'B':
-    return lexer_check_identifier(1, 6, "oolean", TOKEN_TYPE_BOOLEAN);
-
-  case 'S':
-    return lexer_check_identifier(1, 5, "tring", TOKEN_TYPE_STRING);
-
   case 'a':
     return lexer_check_identifier(1, 2, "nd", TOKEN_AND);
 
@@ -149,17 +131,8 @@ static TokenType lexer_identifier_type() {
   case 'r':
     return lexer_check_identifier(1, 5, "eturn", TOKEN_RETURN);
 
-  case 'o': {
-    if (lexer.cursor - lexer.start > 1) {
-      switch (lexer.start[1]) {
-      case 'f':
-        return lexer_check_identifier(1, 1, "f", TOKEN_OF);
-      case 'r':
-        return lexer_check_identifier(1, 1, "r", TOKEN_OR);
-      }
-    }
-    break;
-  }
+  case 'o':
+    return lexer_check_identifier(1, 1, "r", TOKEN_OR);
 
   case 'e': {
     if (lexer.cursor - lexer.start > 1) {
@@ -185,8 +158,16 @@ static TokenType lexer_identifier_type() {
     break;
   }
 
-  case 'i':
-    return lexer_check_identifier(1, 1, "f", TOKEN_IF);
+  case 'i': {
+    if (lexer.cursor - lexer.start > 1) {
+      switch (lexer.start[1]) {
+      case 'n':
+        return lexer_check_identifier(1, 1, "n", TOKEN_IN);
+      case 'f':
+        return lexer_check_identifier(1, 1, "f", TOKEN_IF);
+      }
+    }
+  }
 
   case 'f': {
     if (lexer.cursor - lexer.start > 1) {
@@ -195,8 +176,8 @@ static TokenType lexer_identifier_type() {
         return lexer_check_identifier(1, 4, "alse", TOKEN_FALSE);
       case 'o':
         return lexer_check_identifier(1, 2, "or", TOKEN_FOR);
-      case 'u':
-        return lexer_check_identifier(1, 7, "unction", TOKEN_FUNCTION);
+      case 'n':
+        return lexer_check_identifier(1, 1, "n", TOKEN_FUNCTION);
       }
     }
     break;
@@ -204,9 +185,6 @@ static TokenType lexer_identifier_type() {
 
   case 'v':
     return lexer_check_identifier(1, 2, "ar", TOKEN_VAR);
-
-  case 'p':
-    return lexer_check_identifier(1, 4, "rint", TOKEN_PRINT);
 
   case 's':
     return lexer_check_identifier(1, 5, "truct", TOKEN_STRUCT);
@@ -307,15 +285,15 @@ LexerOutput *lexer_run(const char *source) {
       switch (lexer_peek()) {
       case '=': {
         (void)lexer_advance();
-        lexer_add_token(output, token_create(TOKEN_ASSIGN_MODULUS,
+        lexer_add_token(output, token_create(TOKEN_ASSIGN_REMAINDER,
                                              "%=", lexer.line, lexer.column));
         break;
       }
 
       default:
 
-        lexer_add_token(
-            output, token_create(TOKEN_MODULUS, "%", lexer.line, lexer.column));
+        lexer_add_token(output, token_create(TOKEN_REMAINDER, "%", lexer.line,
+                                             lexer.column));
         break;
       }
       break;
