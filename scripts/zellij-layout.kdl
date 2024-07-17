@@ -1,39 +1,36 @@
 layout {
-    pane size=1 borderless=true {
-        plugin location="tab-bar"
-    }
-    pane split_direction="horizontal" {
-      pane split_direction="vertical" size="60%" {
-        pane {
-          name "Lang: EQ"
-          command "sh"
-          args "scripts/watcher.sh" "eq-input"
-        }
-        pane {
-          name "AST (based on ESTree Spec)"
-          command "sh"
-          args "scripts/watcher.sh" "c-run"
-        }
-        pane {
-          name "Lang: JS"
-          command "sh"
-          args "scripts/watcher.sh" "js-output"
-        }
+  pane split_direction="horizontal" {
+    pane split_direction="vertical" size="60%" {
+      pane {
+        name "Input: Kapi"
+        command "sh"
+        args "scripts/watcher.sh" "kapi-input"
       }
-      pane split_direction="vertical" size="40%" {
-        pane size="60%" {
-          name "C Build"
-          command "sh"
-          args "scripts/watcher.sh" "c-build"
-        }
-        pane {
-          name "JS Generate"
-          command "sh"
-          args "scripts/watcher.sh" "js-generate"
-        }
+      pane {
+        name "Kapi -> AST (ESTree)"
+        command "sh"
+        args "scripts/watcher.sh" "kapi-output"
+      }
+      pane size="37%" {
+        name "Output: JavaScript"
+        command "sh"
+        args "scripts/watcher.sh" "js-output"
       }
     }
-    pane size=2 borderless=true {
-        plugin location="status-bar"
+    pane split_direction="vertical" size="40%" {
+      pane size="60%" {
+        name "Kapi Build"
+        command "sh"
+        args "scripts/watcher.sh" "kapi-build"
+      }
+      pane {
+        name "JavaScript: Rollup + Babel"
+        command "sh"
+        args "scripts/watcher.sh" "js-generate"
+      }
     }
+  }
+  pane size=1 borderless=true {
+      plugin location="status-bar"
+  }
 }

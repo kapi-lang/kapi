@@ -52,3 +52,37 @@ Enum.value(error, 0); # 500
 
 Enum.value(error, 1); # error message
 ```
+
+## Comparision
+
+
+### Numeric
+
+```
+enum Types {
+  A,
+  B,
+  C,
+}
+
+var option: Types = Types.A;
+
+Enum.is(option, Types.A);   # true
+
+Enum.is(option, Types.B);   # false
+```
+
+### With Arguments
+
+```
+enum Result {
+  Ok(Int),
+  Error(Int)
+}
+
+var option: Result = Result.Ok(200);
+
+Enum.is(option, Result.Ok);      # true
+
+Enum.is(option, Result.Error);   # false
+```

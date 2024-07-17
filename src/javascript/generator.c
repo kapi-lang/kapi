@@ -7,29 +7,28 @@
 #include "system/folder.h"
 
 #define ROOT_DIR ".kapi"
-#define FILENAME "javascript.ast.json"
+#define FILENAME "javascript.ast"
 #define OUTPUT_PATH (ROOT_DIR "/" FILENAME)
 
 void javascript_generate(ParserOutput *ast) {
   json_object *jprogram = ast_program(ast);
 
-  printf("JSON:\n\n%s\n\n",
-         json_object_to_json_string_ext(jprogram, JSON_C_TO_STRING_PRETTY |
-                                                      JSON_C_TO_STRING_COLOR));
+  printf("%s\n",
+         json_object_to_json_string_ext(jprogram, JSON_C_TO_STRING_PLAIN));
 
   if (!folder_create(ROOT_DIR)) {
-    EXCEPTION("[ast] error to create folder .kapi");
+    EXCEPTION("[javascript] error to create folder .kapi");
   }
 
-  const char *content =
-      json_object_to_json_string_ext(jprogram, JSON_C_TO_STRING_PLAIN);
+  const char *content = json_object_to_json_string_ext(
+      jprogram, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
 
   FILE *file = file_open(OUTPUT_PATH);
 
-  file_write(file, content, sizeof(char), strlen(content));
+  (void)file_write(file, content, sizeof(char), strlen(content));
 
   if (!file_close(file)) {
-    EXCEPTION("[ast] error to generate file");
+    EXCEPTION("[javascript] error to write the ast");
   }
 
   json_object_put(jprogram);

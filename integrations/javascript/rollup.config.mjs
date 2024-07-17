@@ -1,10 +1,16 @@
 import { defineConfig } from 'rollup';
 import generate from '@babel/generator';
-import * as fs from "node:fs";
 import * as path from "node:path";
+import { spawnSync } from 'node:child_process';
+import { cwd, stdout } from 'node:process';
+// import postcss from "postcss";
+// import cssnano from "cssnano";
+// import autoprefixer from "autoprefixer";
 
 export default defineConfig({
-  input: "index.js",
+  input: {
+    index: "../../examples/playground.kapi",
+  },
   output: {
     format: 'esm',
     generatedCode: 'es5',
@@ -22,11 +28,25 @@ export default defineConfig({
 function equal_script() {
   return {
     name: "equal-script",
-    transform(source, id) {
+    async transform(source, id) {
       try {
-        const ast = fs.readFileSync(path.join("../../", ".kapi", "javascript.ast.json"), { encoding: "utf8" });
+        const kapi = await spawnSync(path.join(cwd(), '..', '..', 'build', 'kapi'), ['javascript', id]);
 
-        const file = generate.default(JSON.parse(ast));
+        const kapi_stdout = kapi.stdout.toString('utf-8')
+          .split(/(\r?\n)/g);
+
+        const ast_text = kapi_stdout
+          .find((content) => content.startsWith('{'));
+
+        if (!ast_text) {
+          this.error(new Error(kapi.stderr.toString('utf-8')));
+
+          return "";
+        }
+
+        const ast = JSON.parse(ast_text);
+
+        const file = generate.default(ast);
 
         return file;
       } catch (error) {
@@ -38,3 +58,31 @@ function equal_script() {
     }
   };
 }
+
+
+// const css_ast = postcss.parse(`
+//   ::placeholder {
+//     color: gray;
+//   }
+
+//   #root {
+//     color: red;
+//   }
+// `);
+
+// const css_processor = postcss()
+//   .use(autoprefixer)
+//   .use(cssnano);
+
+
+// let css_result = '';
+
+// postcss.stringify(css_ast, (chunk, node, type) => {
+//   css_result += chunk;
+// });
+
+// const r = await css_processor.process(css_result, {
+//   from: undefined,
+// });
+
+// console.log(r.css);

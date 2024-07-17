@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdarg.h>
 #include <string.h>
 
@@ -5,7 +6,7 @@
 #include "type/string.h"
 
 static char *string_from_sized(const char *value, size_t length) {
-  char *result = STRING_NEW(char, length);
+  char *result = STRING_NEW(length);
 
   (void)memcpy(result, value, length);
 
@@ -14,20 +15,8 @@ static char *string_from_sized(const char *value, size_t length) {
   return result;
 }
 
-utf8_t *utf8_from(const char *value, size_t *size) {
-  const size_t value_length = strlen(value);
-
-  utf8_t *out = STRING_NEW(utf8_t, value_length);
-
-  (*size) = mbstowcs(out, value, value_length);
-
-  return out;
-}
-
-void utf8_free(utf8_t *value) { free(value); }
-
 char *string_empty() {
-  char *result = STRING_NEW(char, 1);
+  char *result = STRING_NEW(1);
 
   result[0] = '\0';
 
@@ -45,7 +34,7 @@ void string_update(char *string, const char *value) {
   const size_t next_length = strlen(value);
 
   if (next_length > length) {
-    string = STRING_RESIZE(char, string, next_length);
+    string = STRING_RESIZE(string, next_length);
   }
 
   (void)memcpy(string, value, next_length);
@@ -133,7 +122,7 @@ void string_trim_left(char **target) {
 
   char *tmp = string_from_sized((*target) + i, next_size);
 
-  *target = STRING_RESIZE(char, *target, next_size);
+  *target = STRING_RESIZE(*target, next_size);
 
   (void)memcpy(*target, tmp, next_size);
 
@@ -155,7 +144,7 @@ void string_trim_right(char **target) {
 
   char *tmp = string_from_sized(*target, next_size);
 
-  *target = STRING_RESIZE(char, *target, next_size);
+  *target = STRING_RESIZE(*target, next_size);
 
   (void)memcpy(*target, tmp, next_size);
 
@@ -169,7 +158,7 @@ void string_concat(char **target, const char *value) {
   const size_t value_size = strlen(value);
   const size_t next_size = current_size + value_size;
 
-  *target = STRING_RESIZE(char, *target, next_size);
+  *target = STRING_RESIZE(*target, next_size);
 
   (void)memcpy((*target) + current_size, value, value_size);
 
@@ -177,10 +166,8 @@ void string_concat(char **target, const char *value) {
 }
 
 char *string_remove_all(const char *value, const char remove) {
-  const size_t current_size = strlen(value);
-
   char *next_value = string_empty();
-  char *cursor = value;
+  char *cursor = (char *)value;
 
   int i = string_index_of(value, remove);
 
@@ -208,7 +195,7 @@ char *string_format(const char *format, ...) {
   size_t length = vsnprintf(0, 0, format, args);
   va_end(args);
 
-  char *output = STRING_NEW(char, length);
+  char *output = STRING_NEW(length);
 
   va_start(args, format);
   vsnprintf(output, length + 1, format, args);

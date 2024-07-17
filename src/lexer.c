@@ -41,11 +41,7 @@ static bool char_is_alpha(char c) {
 static bool char_is_digit(char c) { return (c >= '0' && c <= '9') || c == '_'; }
 
 static void lexer_add_token(LexerOutput *output, Token token) {
-  const size_t index = output->length++;
-
-  output->tokens = ARRAY_RESIZE(Token, output->tokens, output->length);
-
-  output->tokens[index] = token;
+  ARRAY_PUSH(Token, output->tokens, output->length, token);
 
   lexer_commit();
 
@@ -72,7 +68,7 @@ static Token lexer_string() {
   /* The closing quote. */
   (void)lexer_advance();
 
-  char *lexeme = STRING_NEW(char, length);
+  char *lexeme = STRING_NEW(length);
 
   (void)memcpy(lexeme, lexer.start, length);
 
@@ -98,7 +94,7 @@ static Token lexer_number() {
 
   const size_t length = (size_t)(lexer.cursor - lexer.start);
 
-  char *lexeme = STRING_NEW(char, length);
+  char *lexeme = STRING_NEW(length);
 
   (void)memcpy(lexeme, lexer.start, length);
 
@@ -235,7 +231,7 @@ static Token lexer_identifier() {
 
   const size_t length = (size_t)(lexer.cursor - lexer.start);
 
-  char *lexeme = STRING_NEW(char, length);
+  char *lexeme = STRING_NEW(length);
 
   (void)memcpy(lexeme, lexer.start, length);
 
@@ -251,6 +247,8 @@ LexerOutput *lexer_run(const char *source) {
   lexer.start = lexer.cursor = source;
 
   LexerOutput *output = NEW(LexerOutput);
+  output->tokens = NULL;
+  output->length = 0;
 
   while (!lexer_is_eof()) {
     const char c = lexer_advance();

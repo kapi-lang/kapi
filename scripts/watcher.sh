@@ -2,28 +2,38 @@
 
 COMMAND=${1}
 
-C_BUILD="mkdir -p build && cd build && cmake .. && make"
-C_PROGRAM="build/kapi javascript examples/playground.kapi"
-BUNDLER_INPUT="cat examples/playground.kapi"
-BUNDLER_BUILD="cd integrations/javascript && pnpm rollup -c"
-BUNDLER_OUTPUT="cat integrations/javascript/out/index.js"
+PLATFORM="javascript"
 
-if [[ "$COMMAND" = "c-run" ]]; then
-  fswatch -0 -o examples/playground.kapi -o build/kapi | xargs -0 -n1 -I{} bash -c "reset && $C_PROGRAM"
+ROOT="integrations/${PLATFORM}"
+
+KAPI_BUILD="mkdir -p build && cd build && cmake .. && make"
+KAPI_BIN="build/kapi"
+KAPI_INPUT="examples/playground.kapi"
+KAPI_OUTPUT="${ROOT}/.kapi/${PLATFORM}.ast"
+
+COLORED_CAT="bat -p -pp -m '*.ast:JSON'"
+
+if [[ "$COMMAND" = "kapi-input" ]]; then
+  bash -c "reset && cat ${KAPI_INPUT}"
+  fswatch -0 -o $KAPI_INPUT | xargs -0 -n1 -I{} bash -c "reset && cat ${KAPI_INPUT}"
 fi
 
-if [[ "$COMMAND" = "c-build" ]]; then
-  fswatch -0 -or src | xargs -0 -n1 -I{} bash -c "reset && $C_BUILD"
-fi
-
-if [[ "$COMMAND" = "js-generate" ]]; then
-  fswatch -0 -o .kapi/javascript.ast.json | xargs -0 -n1 -I{} bash -c "reset && $BUNDLER_BUILD"
+if [[ "$COMMAND" = "kapi-output" ]]; then
+  bash -c "reset && ${COLORED_CAT} ${KAPI_OUTPUT}"
+  fswatch -0 -o $KAPI_OUTPUT | xargs -0 -n1 -I{} bash -c "reset && ${COLORED_CAT} ${KAPI_OUTPUT}"
 fi
 
 if [[ "$COMMAND" = "js-output" ]]; then
-  fswatch -0 -or integrations/javascript/out | xargs -0 -n1 -I{} bash -c "reset && $BUNDLER_OUTPUT"
+  bash -c "reset && ${COLORED_CAT} ${ROOT}/out/index.js"
+  fswatch -0 -or ${ROOT}/out | xargs -0 -n1 -I{} bash -c "reset && ${COLORED_CAT} ${ROOT}/out/index.js"
 fi
 
-if [[ "$COMMAND" = "eq-input" ]]; then
-  fswatch -0 -o examples/playground.kapi | xargs -0 -n1 -I{} bash -c "reset && $BUNDLER_INPUT"
+if [[ "$COMMAND" = "kapi-build" ]]; then
+  bash -c "reset && $KAPI_BUILD"
+  fswatch -0 -or src -o CMakeLists.txt | xargs -0 -n1 -I{} bash -c "reset && $KAPI_BUILD"
+fi
+
+if [[ "$COMMAND" = "js-generate" ]]; then
+  bash -c "reset && cd ${ROOT} && pnpm rollup -c"
+  fswatch -0 -o $KAPI_BIN -o $KAPI_INPUT -o $ROOT/rollup.config.mjs | xargs -0 -n1 -I{} bash -c "reset && cd ${ROOT} && pnpm rollup -c"
 fi

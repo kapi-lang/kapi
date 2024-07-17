@@ -6,6 +6,189 @@
 #include "token.h"
 #include "type/string.h"
 
+Identifier *parser_identifier(const char *name) {
+  Identifier *id = NEW(Identifier);
+
+  id->name = name;
+  id->typeAnnotation = NULL;
+
+  return id;
+}
+
+Expression *parser_identifier_expr(const char *name) {
+  Expression *expr = NEW(Expression);
+
+  expr->type = EXPRESSION_IDENTIFIER;
+  expr->as.identifier = parser_identifier(name);
+
+  return expr;
+}
+
+Expression *parser_unary_expr(TokenType operator, Expression * right,
+                              bool prefix) {
+  Expression *expr = NEW(Expression);
+  expr->type = EXPRESSION_UNARY;
+  expr->as.unary = NEW(UnaryExpression);
+  expr->as.unary->operator= operator;
+  expr->as.unary->right = right;
+  expr->as.unary->prefix = prefix;
+
+  return expr;
+}
+
+Expression *parser_member_expr(Expression *object, Expression *property,
+                               bool computed) {
+  Expression *expr = NEW(Expression);
+
+  expr->type = EXPRESSION_MEMBER;
+  expr->as.member = NEW(MemberExpression);
+  expr->as.member->object = object;
+  expr->as.member->property = property;
+  expr->as.member->computed = computed;
+
+  return expr;
+}
+
+Expression *parser_binary_expr(Expression *left, TokenType operator,
+                               Expression * right) {
+  Expression *expr = NEW(Expression);
+
+  expr->type = EXPRESSION_BINARY;
+  expr->as.binary = NEW(BinaryExpression);
+  expr->as.binary->left = left;
+  expr->as.binary->operator= operator;
+  expr->as.binary->right = right;
+
+  return expr;
+}
+
+Expression *parser_logical_expr(Expression *left, TokenType operator,
+                                Expression * right) {
+  Expression *expr = NEW(Expression);
+
+  expr->type = EXPRESSION_LOGICAL;
+  expr->as.logical = NEW(LogicalExpression);
+  expr->as.logical->left = left;
+  expr->as.logical->operator= operator;
+  expr->as.logical->right = right;
+
+  return expr;
+}
+
+Expression *parser_assignment_expr(Expression *left, TokenType operator,
+                                   Expression * right) {
+  Expression *expr = NEW(Expression);
+
+  expr->type = EXPRESSION_ASSIGNMENT;
+  expr->as.assignment = NEW(AssignmentExpression);
+  expr->as.assignment->left = left;
+  expr->as.assignment->operator= operator;
+  expr->as.assignment->right = right;
+
+  return expr;
+}
+
+Expression *parser_update_expr(TokenType operator, Expression * right,
+                               bool prefix) {
+  Expression *expr = NEW(Expression);
+
+  expr->type = EXPRESSION_UPDATE;
+  expr->as.update = NEW(UpdateExpression);
+  expr->as.update->operator= operator;
+  expr->as.update->argument = right;
+  expr->as.update->prefix = prefix;
+
+  return expr;
+}
+
+Expression *parser_literal_expr_number(TokenType type, double value) {
+  Expression *expr = NEW(Expression);
+
+  expr->type = EXPRESSION_LITERAL;
+  expr->as.literal = NEW(Literal);
+  expr->as.literal->type = type;
+  expr->as.literal->as.number = value;
+
+  return expr;
+}
+
+Expression *parser_literal_expr_nil() {
+  Expression *expr = NEW(Expression);
+
+  expr->type = EXPRESSION_LITERAL;
+  expr->as.literal = NEW(Literal);
+  expr->as.literal->type = TOKEN_NIL;
+
+  return expr;
+}
+
+Expression *parser_literal_expr_bool(bool value) {
+  Expression *expr = NEW(Expression);
+
+  expr->type = EXPRESSION_LITERAL;
+  expr->as.literal = NEW(Literal);
+  expr->as.literal->type = TOKEN_BOOLEAN;
+  expr->as.literal->as.boolean = value;
+
+  return expr;
+}
+
+Expression *parser_literal_expr_string(const char *value) {
+  Expression *expr = NEW(Expression);
+
+  expr->type = EXPRESSION_LITERAL;
+  expr->as.literal = NEW(Literal);
+  expr->as.literal->type = TOKEN_STRING;
+  expr->as.literal->as.string = value;
+
+  return expr;
+}
+
+DeclarationStatement *parser_variable_decl(Identifier *id, void *init) {
+  DeclarationStatement *decl = NEW(DeclarationStatement);
+
+  decl->type = DECLARATION_VARIABLE;
+  decl->as.variable = NEW(VariableDeclaration);
+  decl->as.variable->id = id;
+  decl->as.variable->init = init;
+
+  return decl;
+}
+
+DeclarationStatement *parser_struct_decl(Identifier *id) {
+  DeclarationStatement *decl = NEW(DeclarationStatement);
+
+  decl->type = DECLARATION_STRUCT;
+  decl->as.structure = NEW(StructDeclaration);
+  decl->as.structure->id = id;
+  decl->as.structure->body = NULL;
+  decl->as.structure->length = 0;
+
+  return decl;
+}
+
+DeclarationStatement *parser_function_decl(Identifier *id) {
+  DeclarationStatement *decl = NEW(DeclarationStatement);
+
+  decl->type = DECLARATION_FUNCTION;
+  decl->as.function = NEW(FunctionDeclaration);
+  decl->as.function->id = id;
+  decl->as.function->body = NULL;
+  decl->as.function->params = NULL;
+  decl->as.function->length = 0;
+  decl->as.function->returnType = NEW(TypeAnnotation);
+
+  return decl;
+}
+
+Statement *parser_declaration_stmt(DeclarationStatement *decl) {
+  Statement *stmt = NEW(Statement);
+  stmt->type = STATEMENT_DECLARATION;
+  stmt->as.declaration = decl;
+
+  return stmt;
+}
+
 typedef struct ParserState {
   Token *start;
   Token *cursor;
@@ -16,14 +199,6 @@ ParserState parser;
 static Expression *parser_assignment();
 static Expression *parser_expression();
 static Statement *parser_statement();
-
-static void parser_add_statement(ParserOutput *output, Statement *statement) {
-  const size_t index = output->length++;
-
-  output->body = ARRAY_RESIZE(Statement *, output->body, output->length);
-
-  output->body[index] = statement;
-}
 
 static bool parser_is_eof() { return (*parser.cursor).type == TOKEN_EOF; }
 
@@ -58,13 +233,7 @@ static Expression *parser_primary() {
 
   switch (token.type) {
   case TOKEN_NIL: {
-    Expression *expr = NEW(Expression);
-    Literal *literal_expr = NEW(Literal);
-
-    literal_expr->type = TOKEN_NIL;
-
-    expr->type = EXPRESSION_LITERAL;
-    expr->as.literal = literal_expr;
+    Expression *expr = parser_literal_expr_nil();
 
     (void)parser_advance();
 
@@ -72,19 +241,12 @@ static Expression *parser_primary() {
   }
 
   case TOKEN_INTEGER: {
-    Expression *expr = NEW(Expression);
-    Literal *literal_expr = NEW(Literal);
-
-    literal_expr->type = TOKEN_INTEGER;
-
     char *number_string = string_remove_all(token.lexeme, '_');
 
-    literal_expr->as.number = strtod(number_string, NULL);
+    Expression *expr =
+        parser_literal_expr_number(TOKEN_INTEGER, strtod(number_string, NULL));
 
     free(number_string);
-
-    expr->type = EXPRESSION_LITERAL;
-    expr->as.literal = literal_expr;
 
     (void)parser_advance();
 
@@ -92,14 +254,12 @@ static Expression *parser_primary() {
   }
 
   case TOKEN_FLOAT: {
-    Expression *expr = NEW(Expression);
-    Literal *literal_expr = NEW(Literal);
+    char *number_string = string_remove_all(token.lexeme, '_');
 
-    literal_expr->type = TOKEN_FLOAT;
-    literal_expr->as.number = strtod(token.lexeme, NULL);
+    Expression *expr =
+        parser_literal_expr_number(TOKEN_FLOAT, strtod(number_string, NULL));
 
-    expr->type = EXPRESSION_LITERAL;
-    expr->as.literal = literal_expr;
+    free(number_string);
 
     (void)parser_advance();
 
@@ -108,15 +268,8 @@ static Expression *parser_primary() {
 
   case TOKEN_TRUE:
   case TOKEN_FALSE: {
-    Expression *expr = NEW(Expression);
-    Literal *literal_expr = NEW(Literal);
-
-    literal_expr->type = TOKEN_BOOLEAN;
-    literal_expr->as.boolean =
-        memcmp(token.lexeme, "true", 4) == 0 ? true : false;
-
-    expr->type = EXPRESSION_LITERAL;
-    expr->as.literal = literal_expr;
+    Expression *expr =
+        parser_literal_expr_bool(string_equal(token.lexeme, "true"));
 
     (void)parser_advance();
 
@@ -124,14 +277,7 @@ static Expression *parser_primary() {
   }
 
   case TOKEN_STRING: {
-    Expression *expr = NEW(Expression);
-    Literal *literal_expr = NEW(Literal);
-
-    literal_expr->type = TOKEN_STRING;
-
-    expr->type = EXPRESSION_LITERAL;
-    expr->as.literal = literal_expr;
-    literal_expr->as.string = token.lexeme;
+    Expression *expr = parser_literal_expr_string(token.lexeme);
 
     (void)parser_advance();
 
@@ -170,7 +316,8 @@ static Expression *parser_primary() {
       const Token prop_name = parser_consume(
           TOKEN_IDENTIFIER, "expect 'identifier' to define a struct property");
 
-      prop->key = (Identifier){.name = prop_name.lexeme};
+      prop->key = NEW(Identifier);
+      prop->key->name = prop_name.lexeme;
 
       (void)parser_consume(TOKEN_ASSIGN,
                            "expect '=' after struct property assignment");
@@ -180,11 +327,8 @@ static Expression *parser_primary() {
       (void)parser_consume(TOKEN_COMMA,
                            "expect ',' after struct property assignment");
 
-      const size_t index = obj_expr->length++;
-      obj_expr->properties = ARRAY_RESIZE(
-          ObjectProperty *, obj_expr->properties, obj_expr->length);
-      obj_expr->properties[index] = prop;
-
+      ARRAY_PUSH(ObjectProperty *, obj_expr->properties, obj_expr->length,
+                 prop);
     } while (!parser_check(TOKEN_RIGHT_BRACE));
 
     (void)parser_consume(TOKEN_RIGHT_BRACE,
@@ -198,12 +342,7 @@ static Expression *parser_primary() {
   }
 
   case TOKEN_IDENTIFIER: {
-    Expression *expr = NEW(Expression);
-    Identifier *identifier_expr = NEW(Identifier);
-
-    expr->type = EXPRESSION_IDENTIFIER;
-    expr->as.identifier = identifier_expr;
-    identifier_expr->name = token.lexeme;
+    Expression *expr = parser_identifier_expr(token.lexeme);
 
     (void)parser_advance();
 
@@ -224,16 +363,7 @@ static Expression *parser_call() {
   while (parser_check(TOKEN_DOT)) {
     (void)parser_advance();
 
-    MemberExpression *member_expr = NEW(MemberExpression);
-    member_expr->object = expr;
-    member_expr->property = parser_primary();
-    member_expr->computed = false;
-
-    Expression *next_expr = NEW(Expression);
-    next_expr->type = EXPRESSION_MEMBER;
-    next_expr->as.member = member_expr;
-
-    expr = next_expr;
+    expr = parser_member_expr(expr, parser_primary(), false);
   }
 
   while (parser_check(TOKEN_LEFT_PAREN)) {
@@ -249,12 +379,8 @@ static Expression *parser_call() {
         if (parser_check(TOKEN_COMMA))
           (void)parser_advance();
 
-        const size_t index = call_expr->length++;
-
-        call_expr->arguments =
-            ARRAY_RESIZE(Expression *, call_expr->arguments, call_expr->length);
-
-        call_expr->arguments[index] = parser_expression();
+        ARRAY_PUSH(Expression *, call_expr->arguments, call_expr->length,
+                   parser_expression());
       } while (parser_check(TOKEN_COMMA));
     }
 
@@ -270,16 +396,7 @@ static Expression *parser_call() {
   while (parser_check(TOKEN_INCREMENT) || parser_check(TOKEN_DECREMENT)) {
     const Token operator= parser_advance();
 
-    UpdateExpression *update_expr = NEW(UpdateExpression);
-    update_expr->operator= operator.type;
-    update_expr->prefix = false;
-    update_expr->argument = expr;
-
-    Expression *next_expr = NEW(Expression);
-    next_expr->type = EXPRESSION_UPDATE;
-    next_expr->as.update = update_expr;
-
-    return next_expr;
+    return parser_update_expr(operator.type, expr, false);
   }
 
   return expr;
@@ -289,31 +406,13 @@ static Expression *parser_unary() {
   while (parser_check(TOKEN_INCREMENT) || parser_check(TOKEN_DECREMENT)) {
     const Token operator= parser_advance();
 
-    UpdateExpression *update_expr = NEW(UpdateExpression);
-    update_expr->operator= operator.type;
-    update_expr->prefix = true;
-    update_expr->argument = parser_unary();
-
-    Expression *next_expr = NEW(Expression);
-    next_expr->type = EXPRESSION_UPDATE;
-    next_expr->as.update = update_expr;
-
-    return next_expr;
+    return parser_update_expr(operator.type, parser_unary(), true);
   }
 
   while (parser_check(TOKEN_MINUS) || parser_check(TOKEN_BITWISE_NOT)) {
     const Token operator= parser_advance();
 
-    UnaryExpression *unary_expr = NEW(UnaryExpression);
-    unary_expr->operator= operator.type;
-    unary_expr->right = parser_unary();
-    unary_expr->prefix = true;
-
-    Expression *next_expr = NEW(Expression);
-    next_expr->type = EXPRESSION_UNARY;
-    next_expr->as.unary = unary_expr;
-
-    return next_expr;
+    return parser_unary_expr(operator.type, parser_unary(), true);
   }
 
   return parser_call();
@@ -331,16 +430,7 @@ static Expression *parser_factor() {
          parser_check(TOKEN_BITWISE_UNSIGNED_RIGHT_SHIFT)) {
     const Token operator= parser_advance();
 
-    BinaryExpression *bin_expr = NEW(BinaryExpression);
-    bin_expr->left = expr;
-    bin_expr->operator= operator.type;
-    bin_expr->right = parser_unary();
-
-    Expression *next_expr = NEW(Expression);
-    next_expr->type = EXPRESSION_BINARY;
-    next_expr->as.binary = bin_expr;
-
-    expr = next_expr;
+    expr = parser_binary_expr(expr, operator.type, parser_unary());
   }
 
   return expr;
@@ -352,16 +442,7 @@ static Expression *parser_term() {
   while (parser_check(TOKEN_MINUS) || parser_check(TOKEN_PLUS)) {
     const Token operator= parser_advance();
 
-    BinaryExpression *bin_expr = NEW(BinaryExpression);
-    bin_expr->left = expr;
-    bin_expr->operator= operator.type;
-    bin_expr->right = parser_factor();
-
-    Expression *next_expr = NEW(Expression);
-    next_expr->type = EXPRESSION_BINARY;
-    next_expr->as.binary = bin_expr;
-
-    expr = next_expr;
+    expr = parser_binary_expr(expr, operator.type, parser_factor());
   }
 
   return expr;
@@ -374,16 +455,7 @@ static Expression *parser_comparison() {
          parser_check(TOKEN_LESS) || parser_check(TOKEN_LESS_EQUAL)) {
     const Token operator= parser_advance();
 
-    BinaryExpression *bin_expr = NEW(BinaryExpression);
-    bin_expr->left = expr;
-    bin_expr->operator= operator.type;
-    bin_expr->right = parser_term();
-
-    Expression *next_expr = NEW(Expression);
-    next_expr->type = EXPRESSION_BINARY;
-    next_expr->as.binary = bin_expr;
-
-    expr = next_expr;
+    expr = parser_binary_expr(expr, operator.type, parser_term());
   }
 
   return expr;
@@ -395,16 +467,7 @@ static Expression *parser_equality() {
   while (parser_check(TOKEN_NOT) || parser_check(TOKEN_EQUAL)) {
     const Token operator= parser_advance();
 
-    BinaryExpression *bin_expr = NEW(BinaryExpression);
-    bin_expr->left = expr;
-    bin_expr->operator= operator.type;
-    bin_expr->right = parser_comparison();
-
-    Expression *next_expr = NEW(Expression);
-    next_expr->type = EXPRESSION_BINARY;
-    next_expr->as.binary = bin_expr;
-
-    expr = next_expr;
+    expr = parser_binary_expr(expr, operator.type, parser_comparison());
   }
 
   return expr;
@@ -425,7 +488,7 @@ static Expression *parser_and() {
     next_expr->type = EXPRESSION_LOGICAL;
     next_expr->as.logical = logical_expr;
 
-    expr = next_expr;
+    expr = parser_logical_expr(expr, operator.type, parser_equality());
   }
 
   return expr;
@@ -437,16 +500,7 @@ static Expression *parser_or() {
   while (parser_check(TOKEN_OR)) {
     const Token operator= parser_advance();
 
-    LogicalExpression *logical_expr = NEW(LogicalExpression);
-    logical_expr->left = expr;
-    logical_expr->operator= operator.type;
-    logical_expr->right = parser_and();
-
-    Expression *next_expr = NEW(Expression);
-    next_expr->type = EXPRESSION_LOGICAL;
-    next_expr->as.logical = logical_expr;
-
-    expr = next_expr;
+    expr = parser_logical_expr(expr, operator.type, parser_and());
   }
 
   return expr;
@@ -469,16 +523,7 @@ static Expression *parser_assignment() {
       parser_check(TOKEN_ASSIGN_BITWISE_UNSIGNED_RIGHT_SHIFT)) {
     const Token operator= parser_advance();
 
-    AssignmentExpression *assign_expr = NEW(AssignmentExpression);
-    assign_expr->left = expr;
-    assign_expr->operator= operator.type;
-    assign_expr->right = parser_assignment();
-
-    Expression *next_expr = NEW(Expression);
-    next_expr->type = EXPRESSION_ASSIGNMENT;
-    next_expr->as.assignment = assign_expr;
-
-    return next_expr;
+    return parser_assignment_expr(expr, operator.type, parser_assignment());
   }
 
   return expr;
@@ -519,19 +564,11 @@ static Statement *parser_variable() {
   const Token name = parser_consume(TOKEN_IDENTIFIER,
                                     "expect 'identifier' after 'var' keyword");
 
-  Statement *decl = NEW(Statement);
-  decl->type = STATEMENT_DECLARATION;
-  decl->as.declaration = NEW(DeclarationStatement);
-  decl->as.declaration->type = DECLARATION_VARIABLE;
-  VariableDeclaration *var_decl = NEW(VariableDeclaration);
-  decl->as.declaration->as.variable = var_decl;
+  Identifier *id = parser_identifier(name.lexeme);
+  id->typeAnnotation = NEW(TypeAnnotation);
+  id->typeAnnotation->optional = false;
 
-  var_decl->id = (Identifier){
-      .name = name.lexeme,
-      .typeAnnotation = NEW(TypeAnnotation),
-  };
-
-  var_decl->id.typeAnnotation->optional = false;
+  DeclarationStatement *decl = parser_variable_decl(id, NULL);
 
   (void)parser_consume(TOKEN_COLON, "expect ':' after variable name");
 
@@ -539,33 +576,35 @@ static Statement *parser_variable() {
       parser_consume(TOKEN_IDENTIFIER, "expect 'identifier' in variable type");
 
   if (string_equal(var_type.lexeme, "String")) {
-    var_decl->id.typeAnnotation->type = TOKEN_TYPE_STRING;
+    id->typeAnnotation->type = TOKEN_TYPE_STRING;
   } else if (string_equal(var_type.lexeme, "Bool")) {
-    var_decl->id.typeAnnotation->type = TOKEN_TYPE_BOOLEAN;
+    id->typeAnnotation->type = TOKEN_TYPE_BOOLEAN;
   } else if (string_equal(var_type.lexeme, "Int")) {
-    var_decl->id.typeAnnotation->type = TOKEN_TYPE_INTEGER;
+    id->typeAnnotation->type = TOKEN_TYPE_INTEGER;
   } else if (string_equal(var_type.lexeme, "Float")) {
-    var_decl->id.typeAnnotation->type = TOKEN_TYPE_FLOAT;
+    id->typeAnnotation->type = TOKEN_TYPE_FLOAT;
   } else {
-    var_decl->id.typeAnnotation->type = TOKEN_TYPE_STRUCT;
-    var_decl->id.typeAnnotation->typeName = var_type.lexeme;
+    id->typeAnnotation->type = TOKEN_TYPE_STRUCT;
+    id->typeAnnotation->typeName = var_type.lexeme;
   }
 
   if (parser_check(TOKEN_QUESTION_MARK)) {
     (void)parser_advance();
-    var_decl->id.typeAnnotation->optional = true;
+    id->typeAnnotation->optional = true;
   }
 
-  if (!var_decl->id.typeAnnotation->optional) {
+  if (id->typeAnnotation->optional) {
+    decl->as.variable->init = parser_literal_expr_nil();
+  } else {
     (void)parser_consume(TOKEN_ASSIGN, "expect '=' after variable declaration");
 
-    var_decl->init = parser_expression();
+    decl->as.variable->init = parser_expression();
   }
 
   (void)parser_consume(TOKEN_SEMICOLON,
                        "expect ';' after variable declaration");
 
-  return decl;
+  return parser_declaration_stmt(decl);
 }
 
 static Statement *parser_struct() {
@@ -577,19 +616,14 @@ static Statement *parser_struct() {
 
   (void)parser_consume(TOKEN_LEFT_BRACE, "expect '{' after struct name");
 
-  StructDeclaration *struct_decl = NEW(StructDeclaration);
-
-  struct_decl->id = (Identifier){.name = name.lexeme};
-  struct_decl->body = NULL;
-  struct_decl->length = 0;
+  DeclarationStatement *decl =
+      parser_struct_decl(parser_identifier(name.lexeme));
 
   do {
-    Identifier *prop = NEW(Identifier);
-
     const Token prop_name = parser_consume(
         TOKEN_IDENTIFIER, "expect 'identifier' to define a struct property");
 
-    prop->name = prop_name.lexeme;
+    Identifier *prop = parser_identifier(prop_name.lexeme);
     prop->typeAnnotation = NEW(TypeAnnotation);
 
     (void)parser_consume(TOKEN_COLON, "expect ':' after struct property name");
@@ -619,22 +653,13 @@ static Statement *parser_struct() {
     (void)parser_consume(TOKEN_SEMICOLON,
                          "expect ';' after struct property definition");
 
-    const size_t index = struct_decl->length++;
-    struct_decl->body =
-        ARRAY_RESIZE(Identifier *, struct_decl->body, struct_decl->length);
-    struct_decl->body[index] = prop;
+    ARRAY_PUSH(Identifier *, decl->as.structure->body,
+               decl->as.structure->length, prop);
   } while (!parser_check(TOKEN_RIGHT_BRACE));
 
   (void)parser_consume(TOKEN_RIGHT_BRACE, "expect '}' after struct body");
 
-  Statement *decl = NEW(Statement);
-
-  decl->type = STATEMENT_DECLARATION;
-  decl->as.declaration = NEW(DeclarationStatement);
-  decl->as.declaration->type = DECLARATION_STRUCT;
-  decl->as.declaration->as.structure = struct_decl;
-
-  return decl;
+  return parser_declaration_stmt(decl);
 }
 
 static Statement *parser_block() {
@@ -651,12 +676,8 @@ static Statement *parser_block() {
       EXCEPTION("unterminated block\n");
     }
 
-    const size_t index = stmt->as.block->length++;
-
-    stmt->as.block->body =
-        ARRAY_RESIZE(Statement *, stmt->as.block->body, stmt->as.block->length);
-
-    stmt->as.block->body[index] = parser_statement();
+    ARRAY_PUSH(Statement *, stmt->as.block->body, stmt->as.block->length,
+               parser_statement());
   } while (!parser_check(TOKEN_RIGHT_BRACE));
 
   (void)parser_consume(TOKEN_RIGHT_BRACE, "expect '}' after block");
@@ -694,6 +715,7 @@ static Statement *parser_if() {
                        "expect ')' after if test expression");
 
   stmt->as.condition->consequent = parser_block();
+  stmt->as.condition->alternate = NULL;
 
   if (parser_check(TOKEN_ELSE)) {
     (void)parser_advance();
@@ -720,40 +742,33 @@ static Statement *parser_for() {
   const Token for_item =
       parser_consume(TOKEN_IDENTIFIER, "expect 'identifier' after '('");
 
-  stmt->as.for_loop->left = (Identifier){
-      .name = for_item.lexeme,
-  };
+  stmt->as.for_loop->left = parser_identifier(for_item.lexeme);
 
   (void)parser_consume(TOKEN_IN, "expect 'in' after 'identifier' keyword");
 
   if (parser_check(TOKEN_IDENTIFIER)) {
     stmt->as.for_loop->right = parser_primary();
   } else {
-    Expression *right_expr = NEW(Expression);
-    BinaryExpression *bin_expr = NEW(BinaryExpression);
 
-    bin_expr->left = parser_primary();
+    Expression *left = parser_primary();
 
+    TokenType operator;
     if (parser_check(TOKEN_TO)) {
-      bin_expr
-          ->operator= parser_consume(TOKEN_TO, "expect 'to' after 'in' keyword")
-          .type;
+      operator= parser_consume(TOKEN_TO, "expect 'to' after 'in' keyword").type;
     } else if (parser_check(TOKEN_DOWNTO)) {
       stmt->as.for_loop->reverse = true;
-      bin_expr
-          ->operator=
-              parser_consume(TOKEN_DOWNTO, "expect 'downto' after 'in' keyword")
-          .type;
+      operator=
+          parser_consume(TOKEN_DOWNTO, "expect 'downto' after 'in' keyword")
+              .type;
     } else {
       EXCEPTION("unknown keyword\n");
     }
 
-    bin_expr->right = parser_primary();
+    Expression *right = parser_primary();
 
-    right_expr->type = EXPRESSION_BINARY;
-    right_expr->as.binary = bin_expr;
+    Expression *bin_expr = parser_binary_expr(left, operator, right);
 
-    stmt->as.for_loop->right = right_expr;
+    stmt->as.for_loop->right = bin_expr;
   }
 
   (void)parser_consume(TOKEN_RIGHT_PAREN,
@@ -767,17 +782,9 @@ static Statement *parser_for() {
 static Statement *parser_function() {
   (void)parser_advance();
 
-  FunctionDeclaration *fn_decl = NEW(FunctionDeclaration);
-
-  fn_decl->length = 0;
-  fn_decl->params = NULL;
-  fn_decl->returnType = NEW(TypeAnnotation);
-
-  fn_decl->id = (Identifier){
-      .name = parser_consume(TOKEN_IDENTIFIER,
-                             "expect 'identifier' to name a function")
-                  .lexeme,
-  };
+  DeclarationStatement *decl = parser_function_decl(parser_identifier(
+      parser_consume(TOKEN_IDENTIFIER, "expect 'identifier' to name a function")
+          .lexeme));
 
   (void)parser_consume(TOKEN_LEFT_PAREN, "expect '(' after function name");
 
@@ -785,11 +792,6 @@ static Statement *parser_function() {
     if (parser_check(TOKEN_COMMA)) {
       (void)parser_advance();
     }
-
-    const size_t index = fn_decl->length++;
-
-    fn_decl->params =
-        ARRAY_RESIZE(Identifier *, fn_decl->params, fn_decl->length);
 
     Identifier *param = NEW(Identifier);
     param->typeAnnotation = NEW(TypeAnnotation);
@@ -817,7 +819,8 @@ static Statement *parser_function() {
                        "expect 'identifier' for function parameter name")
             .lexeme;
 
-    fn_decl->params[index] = param;
+    ARRAY_PUSH(Identifier *, decl->as.function->params,
+               decl->as.function->length, param);
   } while (parser_check(TOKEN_COMMA));
 
   (void)parser_consume(TOKEN_RIGHT_PAREN, "expect ')' before function body");
@@ -829,27 +832,20 @@ static Statement *parser_function() {
   case TOKEN_TYPE_INTEGER:
   case TOKEN_TYPE_FLOAT:
   case TOKEN_TYPE_STRING:
-    fn_decl->returnType->type = parser_advance().type;
+    decl->as.function->returnType->type = parser_advance().type;
     break;
   case TOKEN_IDENTIFIER:
-    fn_decl->returnType->type = TOKEN_TYPE_STRUCT;
-    fn_decl->returnType->typeName = parser_advance().lexeme;
+    decl->as.function->returnType->type = TOKEN_TYPE_STRUCT;
+    decl->as.function->returnType->typeName = parser_advance().lexeme;
     break;
   default:
     EXCEPTION("invalid type for function parameter\n");
     break;
   }
 
-  fn_decl->body = parser_block();
+  decl->as.function->body = parser_block();
 
-  Statement *decl = NEW(Statement);
-
-  decl->type = STATEMENT_DECLARATION;
-  decl->as.declaration = NEW(DeclarationStatement);
-  decl->as.declaration->type = DECLARATION_FUNCTION;
-  decl->as.declaration->as.function = fn_decl;
-
-  return decl;
+  return parser_declaration_stmt(decl);
 }
 
 static Statement *parser_statement() {
@@ -895,7 +891,7 @@ ParserOutput *parser_run(LexerOutput *tokens) {
   parser.start = parser.cursor = tokens->tokens;
 
   while (!parser_is_eof()) {
-    parser_add_statement(output, parser_statement());
+    ARRAY_PUSH(Statement *, output->body, output->length, parser_statement());
   }
 
   return output;

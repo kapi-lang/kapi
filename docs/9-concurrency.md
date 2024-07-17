@@ -27,7 +27,11 @@ async fn do_request(String url) Result {
 
 var result: Task<Result> = do_request("url");
 
-await result;   # Message
+var result: Result = await do_request("url");
+
+if (Enum.is(result, Result.Ok)) {
+  print(status);
+}
 ```
 
 ### Waiting multiple Tasks

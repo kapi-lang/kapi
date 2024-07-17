@@ -12,7 +12,7 @@
  * kapi brightscript <filename>
  */
 
-int main(int argc, char const *argv[]) {
+int main(int _argc, char const *argv[]) {
   const char *platform = argv[1];
   const char *filename = argv[2];
 
@@ -20,6 +20,7 @@ int main(int argc, char const *argv[]) {
   LOG_INFO("file: %s\n", filename);
 
   const char *source = file_read(filename);
+
   LexerOutput *tokens = lexer_run(source);
   ParserOutput *ast = parser_run(tokens);
 

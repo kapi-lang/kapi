@@ -1,0 +1,88 @@
+# usage:
+#
+# import "module"
+# import "ui:menu-item"
+#
+# var opened: Signal<Bool> = Signal(true);
+#
+# <menu-item icon={"http://..."} title="Home" opened={opened} />
+#
+
+<script>
+@prop
+var icon: String;
+@prop
+var title: String;
+@prop
+var opened: Signal<Bool>;
+
+@watch(opened) {
+  if (opened) {
+    Element("root").style({
+      width = "312px",
+    });
+    Element("label").text(title);
+  } else {
+    Element("root").style({
+      width = "64px",
+    });
+    Element("label").text("");
+  }
+}
+
+@on_focus("root") {
+  Element("root").style({
+    backgroundColor = "#FF0000",
+  });
+
+  Element("label").style({
+    color = "#FF0000",
+  });
+}
+
+@on_unfocus("root") {
+  Element("root").style({
+    backgroundColor = "#000000",
+  });
+
+  Element("label").style({
+    color = "#FFFFFF",
+  });
+}
+
+@on_press("root") {
+  print(title + " was clicked!");
+}
+</script>
+
+<template>
+  <stack id="root" mode="vertical">
+    <image id="icon" source={icon} />
+    <text id="label">{label}</text>
+  </stack>
+<template>
+
+<style>
+  #root {
+    width: 64px;
+    height: 64px;
+    padding: 20px;
+    fontSize: 18px;
+    lineHeight: 24px;
+    fontWeight: 700px;
+  }
+
+  #icon {
+    position: "relative";
+    top: 0px;
+    left: 0px;
+    width: 24px;
+    height: 24px;
+  }
+
+  #label {
+    position: "relative";
+    top: -4px;
+    left: 24px;
+  }
+</style>

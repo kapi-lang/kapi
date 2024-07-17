@@ -4,18 +4,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include <wchar.h>
-
-#define STRING_NEW(type, length) (type *)malloc(sizeof(type) * (length + 1))
-
-#define STRING_RESIZE(type, target, length)                                    \
-  (type *)realloc(target, sizeof(type) * (length + 1))
-
-typedef wchar_t utf8_t;
-
-utf8_t *utf8_from(const char *value, size_t *size);
-
-void utf8_free(utf8_t *value);
 
 char *string_empty();
 

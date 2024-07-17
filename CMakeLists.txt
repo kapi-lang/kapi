@@ -51,6 +51,22 @@ add_executable(
 
 target_link_libraries(${PROJECT_NAME} PRIVATE json-c)
 
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-  target_compile_definitions(${PROJECT_NAME} PRIVATE DEBUG)
-endif()
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+
+  target_compile_options(${PROJECT_NAME} PRIVATE -Os)
+
+elseif (CMAKE_BUILD_TYPE STREQUAL "Debug")
+
+  target_compile_definitions(${PROJECT_NAME} PRIVATE DEBUG _DEBUG)
+
+  target_compile_options(${PROJECT_NAME} PRIVATE
+    -Og -pg -g -ggdb
+    -Wall -Wextra -Wformat
+    -fsanitize=address -fno-omit-frame-pointer -fsanitize-address-use-after-scope
+  )
+
+  target_link_options(${PROJECT_NAME} PRIVATE
+    -fsanitize=address -fno-omit-frame-pointer -fsanitize-address-use-after-scope
+  )
+
+endif ()

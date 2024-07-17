@@ -30,13 +30,10 @@ static Scope *scope_create(bool global, Scope *above) {
 
 static void typechecker_add_error(TypeCheckerOutput *output,
                                   const char *message) {
-  const size_t index = output->length++;
+  TypeCheckerError *error = NEW(TypeCheckerError);
+  error->message = message;
 
-  output->errors =
-      ARRAY_RESIZE(TypeCheckerError *, output->errors, output->length);
-
-  output->errors[index] = NEW(TypeCheckerError);
-  output->errors[index]->message = message;
+  ARRAY_PUSH(TypeCheckerError *, output->errors, output->length, error);
 }
 
 TypeCheckerOutput *typechecker_run(ParserOutput *ast) {
@@ -55,15 +52,15 @@ TypeCheckerOutput *typechecker_run(ParserOutput *ast) {
       if (decl_stmt->type == DECLARATION_VARIABLE) {
         const VariableDeclaration *var_decl = decl_stmt->as.variable;
 
-        if (hashtable_get(global_scope->declarations, var_decl->id.name)) {
+        if (hashtable_get(global_scope->declarations, var_decl->id->name)) {
           typechecker_add_error(output, "can't re-declare a variable");
 
           break;
         }
 
-        if (var_decl->id.typeAnnotation) {
-          hashtable_set(global_scope->declarations, var_decl->id.name,
-                        var_decl->id.typeAnnotation);
+        if (var_decl->id->typeAnnotation) {
+          hashtable_set(global_scope->declarations, var_decl->id->name,
+                        var_decl->id->typeAnnotation);
         }
       }
     } else if (stmt->type == STATEMENT_EXPRESSION) {

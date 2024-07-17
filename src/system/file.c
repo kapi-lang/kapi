@@ -28,7 +28,7 @@ char *file_read(const char *path) {
 
   rewind(file);
 
-  char *buffer = STRING_NEW(char, fileSize);
+  char *buffer = STRING_NEW(fileSize);
 
   if (buffer == NULL) {
     LOG_ERROR("[file] not enough memory to read '%s'.\n", path);

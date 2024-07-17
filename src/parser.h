@@ -74,7 +74,7 @@ typedef struct CallExpression {
 } CallExpression;
 
 typedef struct ObjectProperty {
-  Identifier key;
+  Identifier *key;
   Expression *value;
 } ObjectProperty;
 
@@ -123,18 +123,18 @@ struct Expression {
 //// Declaration
 
 typedef struct StructDeclaration {
-  Identifier id;
+  Identifier *id;
   Identifier **body;
   size_t length;
 } StructDeclaration;
 
 typedef struct VariableDeclaration {
-  Identifier id;
+  Identifier *id;
   Expression *init;
 } VariableDeclaration;
 
 typedef struct FunctionDeclaration {
-  Identifier id;
+  Identifier *id;
   TypeAnnotation *returnType;
   Statement *body;
   Identifier **params;
@@ -179,7 +179,7 @@ typedef struct IfStatement {
 } IfStatement;
 
 typedef struct ForStatement {
-  Identifier left;
+  Identifier *left;
   Expression *right;
   Statement *body;
   bool reverse;
@@ -221,6 +221,44 @@ typedef struct ParserOutput {
   Statement **body;
   size_t length;
 } ParserOutput;
+
+Identifier *parser_identifier(const char *name);
+
+Expression *parser_identifier_expr(const char *name);
+
+Expression *parser_unary_expr(TokenType operator, Expression * right,
+                              bool prefix);
+
+Expression *parser_member_expr(Expression *object, Expression *property,
+                               bool computed);
+
+Expression *parser_binary_expr(Expression *left, TokenType operator,
+                               Expression * right);
+
+Expression *parser_logical_expr(Expression *left, TokenType operator,
+                                Expression * right);
+
+Expression *parser_assignment_expr(Expression *left, TokenType operator,
+                                   Expression * right);
+
+Expression *parser_update_expr(TokenType operator, Expression * right,
+                               bool prefix);
+
+Expression *parser_literal_expr_nil();
+
+Expression *parser_literal_expr_number(TokenType type, double value);
+
+Expression *parser_literal_expr_bool(bool value);
+
+Expression *parser_literal_expr_string(const char *value);
+
+DeclarationStatement *parser_variable_decl(Identifier *id, void *init);
+
+DeclarationStatement *parser_struct_decl(Identifier *id);
+
+DeclarationStatement *parser_function_decl(Identifier *id);
+
+Statement *parser_declaration_stmt(DeclarationStatement *decl);
 
 ParserOutput *parser_run(LexerOutput *tokens);
 

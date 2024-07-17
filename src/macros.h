@@ -65,11 +65,18 @@
 #define ARRAY_RESIZE(type, array, capacity)                                    \
   (type *)realloc(array, (capacity) * sizeof(type))
 
+#define ARRAY_PUSH(type, array, capacity, value)                               \
+  {                                                                            \
+    const size_t index = capacity++;                                           \
+    array = ARRAY_RESIZE(type, array, capacity);                               \
+    array[index] = value;                                                      \
+  }
+
 // String
 
-#define STRING_NEW(type, length) (type *)malloc(sizeof(type) * (length + 1))
+#define STRING_NEW(length) (char *)malloc(sizeof(char) * (length + 1))
 
-#define STRING_RESIZE(type, target, length)                                    \
-  (type *)realloc(target, sizeof(type) * (length + 1))
+#define STRING_RESIZE(target, length)                                          \
+  (char *)realloc(target, sizeof(char) * (length + 1))
 
 #endif

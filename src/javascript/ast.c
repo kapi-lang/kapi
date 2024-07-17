@@ -4,9 +4,10 @@
 #include "macros.h"
 #include "parser.h"
 #include "token.h"
+#include "type/string.h"
 
-static json_object *ast_generate_statement(const Statement *stmt);
-static json_object *ast_generate_expression(const Expression *expression);
+static json_object *ast_statement(const Statement *stmt);
+static json_object *ast_expression(const Expression *expression);
 
 static json_object *ast_object_typed(const char *value) {
   json_object *jroot = json_object_new_object();
@@ -63,8 +64,7 @@ static json_object *ast_string_literal(const char *value) {
 static json_object *ast_binary_expression(const BinaryExpression *expression) {
   json_object *jexpr = ast_object_typed("BinaryExpression");
 
-  json_object_object_add(jexpr, "left",
-                         ast_generate_expression(expression->left));
+  json_object_object_add(jexpr, "left", ast_expression(expression->left));
 
   switch (expression->operator) {
   case TOKEN_EQUAL:
@@ -145,8 +145,7 @@ static json_object *ast_binary_expression(const BinaryExpression *expression) {
     break;
   }
 
-  json_object_object_add(jexpr, "right",
-                         ast_generate_expression(expression->right));
+  json_object_object_add(jexpr, "right", ast_expression(expression->right));
 
   return jexpr;
 }
@@ -173,22 +172,20 @@ static json_object *ast_update_expression(const UpdateExpression *expression) {
   }
 
   json_object_object_add(jexpr, "argument",
-                         ast_generate_expression(expression->argument));
+                         ast_expression(expression->argument));
 
   return jexpr;
 }
 
-static json_object *ast_generate_expression(const Expression *expression) {
+static json_object *ast_expression(const Expression *expression) {
   switch (expression->type) {
   case EXPRESSION_MEMBER: {
     json_object *jexpr = ast_object_typed("MemberExpression");
 
-    json_object_object_add(
-        jexpr, "object",
-        ast_generate_expression(expression->as.member->object));
-    json_object_object_add(
-        jexpr, "property",
-        ast_generate_expression(expression->as.member->property));
+    json_object_object_add(jexpr, "object",
+                           ast_expression(expression->as.member->object));
+    json_object_object_add(jexpr, "property",
+                           ast_expression(expression->as.member->property));
 
     json_object_object_add(
         jexpr, "computed",
@@ -204,8 +201,8 @@ static json_object *ast_generate_expression(const Expression *expression) {
   case EXPRESSION_LOGICAL: {
     json_object *jexpr = ast_object_typed("LogicalExpression");
 
-    json_object_object_add(
-        jexpr, "left", ast_generate_expression(expression->as.logical->left));
+    json_object_object_add(jexpr, "left",
+                           ast_expression(expression->as.logical->left));
 
     switch (expression->as.logical->operator) {
     case TOKEN_AND:
@@ -222,8 +219,8 @@ static json_object *ast_generate_expression(const Expression *expression) {
       break;
     }
 
-    json_object_object_add(
-        jexpr, "right", ast_generate_expression(expression->as.logical->right));
+    json_object_object_add(jexpr, "right",
+                           ast_expression(expression->as.logical->right));
 
     return jexpr;
   }
@@ -240,12 +237,11 @@ static json_object *ast_generate_expression(const Expression *expression) {
       json_object *jprop = ast_object_typed("ObjectProperty");
       json_object_array_put_idx(jprops, i, jprop);
 
-      json_object_object_add(jprop, "key", ast_identifier(prop->key.name));
+      json_object_object_add(jprop, "key", ast_identifier(prop->key->name));
       json_object_object_add(jprop, "computed", json_object_new_boolean(false));
       json_object_object_add(jprop, "method", json_object_new_boolean(false));
       json_object_object_add(jprop, "method", json_object_new_boolean(false));
-      json_object_object_add(jprop, "value",
-                             ast_generate_expression(prop->value));
+      json_object_object_add(jprop, "value", ast_expression(prop->value));
     });
 
     return jexpr;
@@ -275,9 +271,8 @@ static json_object *ast_generate_expression(const Expression *expression) {
       break;
     }
 
-    json_object_object_add(
-        jexpr, "argument",
-        ast_generate_expression(expression->as.unary->right));
+    json_object_object_add(jexpr, "argument",
+                           ast_expression(expression->as.unary->right));
 
     return jexpr;
   }
@@ -288,9 +283,8 @@ static json_object *ast_generate_expression(const Expression *expression) {
   case EXPRESSION_GROUP: {
     json_object *jexpr = ast_object_typed("ParenthesizedExpression");
 
-    json_object_object_add(
-        jexpr, "expression",
-        ast_generate_expression(expression->as.group->expression));
+    json_object_object_add(jexpr, "expression",
+                           ast_expression(expression->as.group->expression));
 
     return jexpr;
   }
@@ -298,12 +292,10 @@ static json_object *ast_generate_expression(const Expression *expression) {
   case EXPRESSION_ASSIGNMENT: {
     json_object *jexpr = ast_object_typed("AssignmentExpression");
 
-    json_object_object_add(
-        jexpr, "left",
-        ast_generate_expression(expression->as.assignment->left));
+    json_object_object_add(jexpr, "left",
+                           ast_expression(expression->as.assignment->left));
 
     switch (expression->as.assignment->operator) {
-
     case TOKEN_ASSIGN:
       json_object_object_add(jexpr, "operator", json_object_new_string("="));
       break;
@@ -362,9 +354,8 @@ static json_object *ast_generate_expression(const Expression *expression) {
       break;
     }
 
-    json_object_object_add(
-        jexpr, "right",
-        ast_generate_expression(expression->as.assignment->right));
+    json_object_object_add(jexpr, "right",
+                           ast_expression(expression->as.assignment->right));
 
     return jexpr;
   }
@@ -372,13 +363,12 @@ static json_object *ast_generate_expression(const Expression *expression) {
   case EXPRESSION_CALL: {
     json_object *jexpr = ast_object_typed("CallExpression");
 
-    if (memcmp(expression->as.call->callee->as.identifier->name, "print", 5) ==
-        0) {
+    if (string_equal(expression->as.call->callee->as.identifier->name,
+                     "print")) {
       json_object_object_add(jexpr, "callee", ast_identifier("console.log"));
     } else {
-      json_object_object_add(
-          jexpr, "callee",
-          ast_generate_expression(expression->as.call->callee));
+      json_object_object_add(jexpr, "callee",
+                             ast_expression(expression->as.call->callee));
     }
 
     json_object *jargs = json_object_new_array();
@@ -386,19 +376,16 @@ static json_object *ast_generate_expression(const Expression *expression) {
 
     FOR_I(expression->as.call->length, {
       json_object_array_put_idx(
-          jargs, i, ast_generate_expression(expression->as.call->arguments[i]));
+          jargs, i, ast_expression(expression->as.call->arguments[i]));
     });
+
     return jexpr;
   }
 
   case EXPRESSION_LITERAL: {
     switch (expression->as.literal->type) {
     case TOKEN_NIL:
-#if defined(USE_UNDEFINED)
-      return ast_identifier("undefined");
-#else
       return ast_null_literal();
-#endif
 
     case TOKEN_INTEGER:
     case TOKEN_FLOAT:
@@ -436,11 +423,12 @@ static json_object *ast_variable_declaration(VariableDeclaration *declaration) {
                          json_object_new_string("VariableDeclarator"));
   json_object_array_put_idx(jdecls, 0, jval_decl);
 
-  json_object_object_add(jval_decl, "id", ast_identifier(declaration->id.name));
+  json_object_object_add(jval_decl, "id",
+                         ast_identifier(declaration->id->name));
 
   if (declaration->init) {
     json_object_object_add(jval_decl, "init",
-                           ast_generate_expression(declaration->init));
+                           ast_expression(declaration->init));
   } else {
     json_object_object_add(jval_decl, "init", NULL);
   }
@@ -448,77 +436,10 @@ static json_object *ast_variable_declaration(VariableDeclaration *declaration) {
   return jdeclaration;
 }
 
-static json_object *
-ast_generate_declaration(const DeclarationStatement *declaration) {
+static json_object *ast_declaration(const DeclarationStatement *declaration) {
   switch (declaration->type) {
-#ifdef USE_INTERFACE
-  case DECLARATION_INTERFACE: {
-    json_object *jdeclaration = ast_object_typed("TSInterfaceDeclaration");
-    json_object_object_add(jdeclaration, "id",
-                           ast_identifier(declaration->as.interface->id.name));
-
-    json_object *jbody = json_object_new_object();
-    json_object_object_add(jdeclaration, "body", jbody);
-    json_object_object_add(jbody, "type",
-                           json_object_new_string("TSInterfaceBody"));
-
-    json_object *jbody_arr = json_object_new_array();
-    json_object_object_add(jbody, "body", jbody_arr);
-
-    FOR_I(declaration->as.interface->length, {
-      const PropertySignature *prop = declaration->as.interface->body[i];
-
-      json_object *jprop = json_object_new_object();
-
-      json_object_object_add(jprop, "type",
-                             json_object_new_string("TSPropertySignature"));
-      json_object_object_add(jprop, "key", ast_identifier(prop->key.name));
-      json_object_object_add(jprop, "computed", json_object_new_boolean(false));
-      json_object_object_add(jprop, "optional",
-                             json_object_new_boolean(prop->optional));
-
-      json_object *jtype = json_object_new_object();
-      json_object_object_add(jprop, "typeAnnotation", jtype);
-
-      json_object_object_add(jtype, "type",
-                             json_object_new_string("TSTypeAnnotation"));
-
-      json_object *jtype_annotation = json_object_new_object();
-      json_object_object_add(jtype, "typeAnnotation", jtype_annotation);
-
-      switch (prop->typeAnnotation->type) {
-      case TYPE_ANNOTATION_INTEGER:
-      case TYPE_ANNOTATION_FLOAT:
-      case TYPE_ANNOTATION_NUMBER:
-        json_object_object_add(jtype_annotation, "type",
-                               json_object_new_string("TSNumberKeyword"));
-        break;
-      case TYPE_ANNOTATION_BOOLEAN:
-        json_object_object_add(jtype_annotation, "type",
-                               json_object_new_string("TSBooleanKeyword"));
-        break;
-      case TYPE_ANNOTATION_STRING:
-        json_object_object_add(jtype_annotation, "type",
-                               json_object_new_string("TSStringKeyword"));
-        break;
-      case TYPE_ANNOTATION_REFERENCE:
-        json_object_object_add(jtype_annotation, "type",
-                               json_object_new_string("TSTypeReference"));
-        json_object_object_add(
-            jtype_annotation, "typeName",
-            ast_identifier(prop->typeAnnotation->typeName.name));
-        break;
-      }
-
-      json_object_array_put_idx(jbody_arr, i, jprop);
-    });
-
-    return jdeclaration;
-  }
-#else
   case DECLARATION_STRUCT:
     return NULL;
-#endif
 
   case DECLARATION_VARIABLE:
     return ast_variable_declaration(declaration->as.variable);
@@ -526,7 +447,7 @@ ast_generate_declaration(const DeclarationStatement *declaration) {
   case DECLARATION_FUNCTION: {
     json_object *jdeclaration = ast_object_typed("FunctionDeclaration");
     json_object_object_add(jdeclaration, "id",
-                           ast_identifier(declaration->as.function->id.name));
+                           ast_identifier(declaration->as.function->id->name));
 
     json_object *jparams = json_object_new_array();
     json_object_object_add(jdeclaration, "params", jparams);
@@ -537,160 +458,106 @@ ast_generate_declaration(const DeclarationStatement *declaration) {
       json_object_array_put_idx(jparams, i, ast_identifier(param->name));
     });
 
-    json_object_object_add(
-        jdeclaration, "body",
-        ast_generate_statement(declaration->as.function->body));
+    json_object_object_add(jdeclaration, "body",
+                           ast_statement(declaration->as.function->body));
 
     return jdeclaration;
   }
   }
 }
 
-static json_object *ast_generate_statement(const Statement *stmt) {
+static json_object *ast_statement(const Statement *stmt) {
   switch (stmt->type) {
 
   case STATEMENT_RETURN: {
     json_object *jstmt = ast_object_typed("ReturnStatement");
 
     json_object_object_add(jstmt, "argument",
-                           ast_generate_expression(stmt->as.returns->argument));
+                           ast_expression(stmt->as.returns->argument));
 
     return jstmt;
   }
 
   case STATEMENT_FOR: {
-    VariableDeclaration decl = (VariableDeclaration){
-        .id = stmt->as.for_loop->left,
-        .init = NULL,
-    };
-
     if (stmt->as.for_loop->right->type == EXPRESSION_IDENTIFIER) {
-      decl.id = (Identifier){
-          .name = "i",
-      };
-
       json_object *jstmt = ast_object_typed("ForStatement");
 
-      Expression *init_expr = NEW(Expression);
-      init_expr->type = EXPRESSION_LITERAL;
-      init_expr->as.literal = NEW(Literal);
-      init_expr->as.literal->type = TOKEN_INTEGER;
-      init_expr->as.literal->as.number = 0;
+      Expression *id_expr;
+      {
+        char *index_name = string_from(stmt->as.for_loop->left->name);
+        string_concat(&index_name, "_$idx");
+        id_expr = parser_identifier_expr(index_name);
+      }
 
-      decl.init = init_expr;
+      DeclarationStatement *var_decl = parser_variable_decl(
+          id_expr->as.identifier, parser_literal_expr_number(TOKEN_INTEGER, 0));
 
-      json_object_object_add(jstmt, "init", ast_variable_declaration(&decl));
+      json_object_object_add(jstmt, "init", ast_declaration(var_decl));
 
-      Expression *id_expr = NEW(Expression);
-      id_expr->type = EXPRESSION_IDENTIFIER;
-      id_expr->as.identifier = NEW(Identifier);
-      id_expr->as.identifier->name = "i";
+      Expression *test_expr = parser_binary_expr(
+          id_expr, TOKEN_LESS,
+          parser_member_expr(stmt->as.for_loop->right,
+                             parser_identifier_expr("length"), false));
 
-      Expression *length_expr = NEW(Expression);
-      length_expr->type = EXPRESSION_MEMBER;
-      length_expr->as.member = NEW(MemberExpression);
-      length_expr->as.member->object = stmt->as.for_loop->right;
-      length_expr->as.member->property = NEW(Expression);
-      length_expr->as.member->property->type = EXPRESSION_IDENTIFIER;
-      length_expr->as.member->property->as.identifier = NEW(Identifier);
-      length_expr->as.member->property->as.identifier->name = "length";
+      json_object_object_add(jstmt, "test", ast_expression(test_expr));
 
-      BinaryExpression *test_exp = NEW(BinaryExpression);
-      test_exp->left = id_expr;
-      test_exp->operator= TOKEN_LESS;
-      test_exp->right = length_expr;
+      Expression *update_expr =
+          parser_update_expr(TOKEN_INCREMENT, id_expr, false);
 
-      json_object_object_add(jstmt, "test", ast_binary_expression(test_exp));
-
-      UpdateExpression *update_exp = NEW(UpdateExpression);
-      update_exp->prefix = false;
-      update_exp->operator= TOKEN_INCREMENT;
-      update_exp->argument = id_expr;
-
-      json_object_object_add(jstmt, "update",
-                             ast_update_expression(update_exp));
+      json_object_object_add(jstmt, "update", ast_expression(update_expr));
 
       BlockStatement *next_block = NEW(BlockStatement);
       next_block->length = 0;
       next_block->body = NULL;
 
-      for (size_t i = 0; i < stmt->as.for_loop->body->as.block->length + 1;
-           i++) {
-        const size_t index = next_block->length++;
-
-        next_block->body =
-            ARRAY_RESIZE(Statement *, next_block->body, next_block->length);
-
+      FOR_I(stmt->as.for_loop->body->as.block->length + 1, {
         if (i == 0) {
-          Statement *item_decl = NEW(Statement);
+          Expression *item_expr =
+              parser_member_expr(stmt->as.for_loop->right, id_expr, true);
 
-          item_decl->type = STATEMENT_DECLARATION;
-          item_decl->as.declaration = NEW(DeclarationStatement);
-          item_decl->as.declaration->type = DECLARATION_VARIABLE;
-          item_decl->as.declaration->as.variable = NEW(VariableDeclaration);
-          item_decl->as.declaration->as.variable->id = stmt->as.for_loop->left;
+          Statement *item_decl = parser_declaration_stmt(
+              parser_variable_decl(stmt->as.for_loop->left, item_expr));
 
-          item_decl->as.declaration->as.variable->init = NEW(Expression);
-          item_decl->as.declaration->as.variable->init->type =
-              EXPRESSION_MEMBER;
-          item_decl->as.declaration->as.variable->init->as.member =
-              NEW(MemberExpression);
-          item_decl->as.declaration->as.variable->init->as.member->object =
-              stmt->as.for_loop->right;
-          item_decl->as.declaration->as.variable->init->as.member->property =
-              id_expr;
-          item_decl->as.declaration->as.variable->init->as.member->computed =
-              true;
-
-          next_block->body[index] = item_decl;
+          ARRAY_PUSH(Statement *, next_block->body, next_block->length,
+                     item_decl);
         } else {
-          next_block->body[index] =
-              stmt->as.for_loop->body->as.block->body[index - 1];
+          ARRAY_PUSH(Statement *, next_block->body, next_block->length,
+                     stmt->as.for_loop->body->as.block->body[index - 1]);
         }
-      }
+      });
 
       stmt->as.for_loop->body->as.block = next_block;
 
       json_object_object_add(jstmt, "body",
-                             ast_generate_statement(stmt->as.for_loop->body));
+                             ast_statement(stmt->as.for_loop->body));
 
       return jstmt;
     } else if (stmt->as.for_loop->right->type == EXPRESSION_BINARY) {
       json_object *jstmt = ast_object_typed("ForStatement");
 
-      decl.init = stmt->as.for_loop->right->as.binary->left;
+      Expression *id_expr =
+          parser_identifier_expr(stmt->as.for_loop->left->name);
 
-      json_object_object_add(jstmt, "init", ast_variable_declaration(&decl));
+      DeclarationStatement *var_decl = parser_variable_decl(
+          id_expr->as.identifier, stmt->as.for_loop->right->as.binary->left);
 
-      Expression *literal_expr = NEW(Expression);
-      literal_expr->type = EXPRESSION_IDENTIFIER;
-      literal_expr->as.identifier = NEW(Identifier);
-      literal_expr->as.identifier->name = stmt->as.for_loop->left.name;
+      json_object_object_add(jstmt, "init", ast_declaration(var_decl));
 
-      BinaryExpression *test_exp = NEW(BinaryExpression);
-      test_exp->left = literal_expr;
-      test_exp->operator= stmt->as.for_loop->reverse ? TOKEN_GREATER_EQUAL
-                                                     : TOKEN_LESS_EQUAL;
-      test_exp->right = stmt->as.for_loop->right->as.binary->right;
+      Expression *test_expr = parser_binary_expr(
+          id_expr,
+          stmt->as.for_loop->reverse ? TOKEN_GREATER_EQUAL : TOKEN_LESS_EQUAL,
+          stmt->as.for_loop->right->as.binary->right);
 
-      json_object_object_add(jstmt, "test", ast_binary_expression(test_exp));
+      json_object_object_add(jstmt, "test", ast_expression(test_expr));
 
-      UpdateExpression *update_exp = NEW(UpdateExpression);
-      update_exp->prefix = false;
-      update_exp->operator= stmt->as.for_loop->reverse ? TOKEN_DECREMENT
-                                                       : TOKEN_INCREMENT;
-      update_exp->argument = literal_expr;
+      Expression *update_expr = parser_update_expr(
+          stmt->as.for_loop->reverse ? TOKEN_DECREMENT : TOKEN_INCREMENT,
+          id_expr, false);
 
-      json_object_object_add(jstmt, "update",
-                             ast_update_expression(update_exp));
+      json_object_object_add(jstmt, "update", ast_expression(update_expr));
 
       json_object_object_add(jstmt, "body",
-                             ast_generate_statement(stmt->as.for_loop->body));
-
-      free(update_exp);
-      free(test_exp);
-      free(literal_expr->as.identifier);
-      free(literal_expr);
+                             ast_statement(stmt->as.for_loop->body));
 
       return jstmt;
     }
@@ -702,15 +569,13 @@ static json_object *ast_generate_statement(const Statement *stmt) {
     json_object *jstmt = ast_object_typed("IfStatement");
 
     json_object_object_add(jstmt, "test",
-                           ast_generate_expression(stmt->as.condition->test));
-    json_object_object_add(
-        jstmt, "consequent",
-        ast_generate_statement(stmt->as.condition->consequent));
+                           ast_expression(stmt->as.condition->test));
+    json_object_object_add(jstmt, "consequent",
+                           ast_statement(stmt->as.condition->consequent));
 
     if (stmt->as.condition->alternate) {
-      json_object_object_add(
-          jstmt, "alternate",
-          ast_generate_statement(stmt->as.condition->alternate));
+      json_object_object_add(jstmt, "alternate",
+                             ast_statement(stmt->as.condition->alternate));
     } else {
       json_object_object_add(jstmt, "alternate", json_object_new_null());
     }
@@ -722,9 +587,9 @@ static json_object *ast_generate_statement(const Statement *stmt) {
     json_object *jstmt = ast_object_typed("WhileStatement");
 
     json_object_object_add(jstmt, "test",
-                           ast_generate_expression(stmt->as.while_loop->test));
+                           ast_expression(stmt->as.while_loop->test));
     json_object_object_add(jstmt, "body",
-                           ast_generate_statement(stmt->as.while_loop->body));
+                           ast_statement(stmt->as.while_loop->body));
 
     return jstmt;
   }
@@ -739,7 +604,7 @@ static json_object *ast_generate_statement(const Statement *stmt) {
     FOR_I(stmt->as.block->length, {
       const Statement *inner_stmt = stmt->as.block->body[i];
 
-      json_object *jitem = ast_generate_statement(inner_stmt);
+      json_object *jitem = ast_statement(inner_stmt);
 
       if (jitem) {
         json_object_array_put_idx(jbody, index++, jitem);
@@ -750,7 +615,7 @@ static json_object *ast_generate_statement(const Statement *stmt) {
   }
 
   case STATEMENT_DECLARATION: {
-    return ast_generate_declaration(stmt->as.declaration);
+    return ast_declaration(stmt->as.declaration);
   }
 
   case STATEMENT_EMPTY:
@@ -764,9 +629,9 @@ static json_object *ast_generate_statement(const Statement *stmt) {
 
   case STATEMENT_EXPRESSION: {
     json_object *jstmt = ast_object_typed("ExpressionStatement");
-    json_object_object_add(
-        jstmt, "expression",
-        ast_generate_expression(stmt->as.expression->expression));
+
+    json_object_object_add(jstmt, "expression",
+                           ast_expression(stmt->as.expression->expression));
     return jstmt;
   }
   }
@@ -782,7 +647,7 @@ json_object *ast_program(ParserOutput *ast) {
   FOR_I(ast->length, {
     const Statement *stmt = ast->body[i];
 
-    json_object *jitem = ast_generate_statement(stmt);
+    json_object *jitem = ast_statement(stmt);
 
     if (jitem) {
       json_object_array_put_idx(jbody, index++, jitem);
