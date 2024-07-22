@@ -576,15 +576,15 @@ static Statement *parser_variable() {
       parser_consume(TOKEN_IDENTIFIER, "expect 'identifier' in variable type");
 
   if (string_equal(var_type.lexeme, "String")) {
-    id->typeAnnotation->type = TOKEN_TYPE_STRING;
+    id->typeAnnotation->type = TYPE_STRING;
   } else if (string_equal(var_type.lexeme, "Bool")) {
-    id->typeAnnotation->type = TOKEN_TYPE_BOOLEAN;
+    id->typeAnnotation->type = TYPE_BOOLEAN;
   } else if (string_equal(var_type.lexeme, "Int")) {
-    id->typeAnnotation->type = TOKEN_TYPE_INTEGER;
+    id->typeAnnotation->type = TYPE_INTEGER;
   } else if (string_equal(var_type.lexeme, "Float")) {
-    id->typeAnnotation->type = TOKEN_TYPE_FLOAT;
+    id->typeAnnotation->type = TYPE_FLOAT;
   } else {
-    id->typeAnnotation->type = TOKEN_TYPE_STRUCT;
+    id->typeAnnotation->type = TYPE_STRUCT;
     id->typeAnnotation->typeName = var_type.lexeme;
   }
 
@@ -632,15 +632,15 @@ static Statement *parser_struct() {
         TOKEN_IDENTIFIER, "expect 'identifier' to define a struct property");
 
     if (string_equal(prop_type.lexeme, "String")) {
-      prop->typeAnnotation->type = TOKEN_TYPE_STRING;
+      prop->typeAnnotation->type = TYPE_STRING;
     } else if (string_equal(prop_type.lexeme, "Bool")) {
-      prop->typeAnnotation->type = TOKEN_TYPE_BOOLEAN;
+      prop->typeAnnotation->type = TYPE_BOOLEAN;
     } else if (string_equal(prop_type.lexeme, "Int")) {
-      prop->typeAnnotation->type = TOKEN_TYPE_INTEGER;
+      prop->typeAnnotation->type = TYPE_INTEGER;
     } else if (string_equal(prop_type.lexeme, "Float")) {
-      prop->typeAnnotation->type = TOKEN_TYPE_FLOAT;
+      prop->typeAnnotation->type = TYPE_FLOAT;
     } else {
-      prop->typeAnnotation->type = TOKEN_TYPE_STRUCT;
+      prop->typeAnnotation->type = TYPE_STRUCT;
       prop->typeAnnotation->typeName = prop_type.lexeme;
     }
 
@@ -796,23 +796,24 @@ static Statement *parser_function() {
     Identifier *param = NEW(Identifier);
     param->typeAnnotation = NEW(TypeAnnotation);
 
-    switch (parser_peek().type) {
-    case TOKEN_TYPE_VOID:
-    case TOKEN_TYPE_BOOLEAN:
-    case TOKEN_TYPE_NUMBER:
-    case TOKEN_TYPE_INTEGER:
-    case TOKEN_TYPE_FLOAT:
-    case TOKEN_TYPE_STRING:
-      param->typeAnnotation->type = parser_advance().type;
-      break;
-    case TOKEN_IDENTIFIER:
-      param->typeAnnotation->type = TOKEN_TYPE_STRUCT;
-      param->typeAnnotation->typeName = parser_advance().lexeme;
-      break;
-    default:
+    const Token param_type = parser_peek();
+
+    if (string_equal(param_type.lexeme, "String")) {
+      param->typeAnnotation->type = TYPE_STRING;
+    } else if (string_equal(param_type.lexeme, "Bool")) {
+      param->typeAnnotation->type = TYPE_BOOLEAN;
+    } else if (string_equal(param_type.lexeme, "Int")) {
+      param->typeAnnotation->type = TYPE_INTEGER;
+    } else if (string_equal(param_type.lexeme, "Float")) {
+      param->typeAnnotation->type = TYPE_FLOAT;
+    } else if (param_type.type == TOKEN_IDENTIFIER) {
+      param->typeAnnotation->type = TYPE_STRUCT;
+      param->typeAnnotation->typeName = param_type.lexeme;
+    } else {
       EXCEPTION("invalid type for function parameter\n");
-      break;
     }
+
+    (void)parser_advance();
 
     param->name =
         parser_consume(TOKEN_IDENTIFIER,
@@ -825,22 +826,28 @@ static Statement *parser_function() {
 
   (void)parser_consume(TOKEN_RIGHT_PAREN, "expect ')' before function body");
 
-  switch (parser_peek().type) {
-  case TOKEN_TYPE_VOID:
-  case TOKEN_TYPE_BOOLEAN:
-  case TOKEN_TYPE_NUMBER:
-  case TOKEN_TYPE_INTEGER:
-  case TOKEN_TYPE_FLOAT:
-  case TOKEN_TYPE_STRING:
-    decl->as.function->returnType->type = parser_advance().type;
-    break;
-  case TOKEN_IDENTIFIER:
-    decl->as.function->returnType->type = TOKEN_TYPE_STRUCT;
-    decl->as.function->returnType->typeName = parser_advance().lexeme;
-    break;
-  default:
-    EXCEPTION("invalid type for function parameter\n");
-    break;
+  const Token return_type = parser_peek();
+
+  if (return_type.type == TOKEN_LEFT_BRACE) {
+    decl->as.function->returnType->type = TYPE_VOID;
+  } else if (string_equal(return_type.lexeme, "String")) {
+    decl->as.function->returnType->type = TYPE_STRING;
+    (void)parser_advance();
+  } else if (string_equal(return_type.lexeme, "Bool")) {
+    decl->as.function->returnType->type = TYPE_BOOLEAN;
+    (void)parser_advance();
+  } else if (string_equal(return_type.lexeme, "Int")) {
+    decl->as.function->returnType->type = TYPE_INTEGER;
+    (void)parser_advance();
+  } else if (string_equal(return_type.lexeme, "Float")) {
+    decl->as.function->returnType->type = TYPE_FLOAT;
+    (void)parser_advance();
+  } else if (return_type.type == TOKEN_IDENTIFIER) {
+    decl->as.function->returnType->type = TYPE_STRUCT;
+    decl->as.function->returnType->typeName = return_type.lexeme;
+    (void)parser_advance();
+  } else {
+    EXCEPTION("invalid type for function return\n");
   }
 
   decl->as.function->body = parser_block();

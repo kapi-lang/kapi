@@ -80,17 +80,19 @@ TypeCheckerOutput *typechecker_run(ParserOutput *ast) {
         }
 
         if (assign_expr->right->type == EXPRESSION_LITERAL) {
-          if (type_annotation->type != assign_expr->right->as.literal->type) {
-            typechecker_add_error(
-                output,
-                string_format(
-                    "can't assign type '%s' expected '%s'",
-                    token_to_string(assign_expr->right->as.literal->type, NULL),
-                    token_to_string(type_annotation->type,
-                                    type_annotation->typeName)));
+          // TODO
+          // if (type_annotation->type != assign_expr->right->as.literal->type)
+          // {
+          //   typechecker_add_error(
+          //       output,
+          //       string_format(
+          //           "can't assign type '%s' expected '%s'",
+          //           token_to_string(assign_expr->right->as.literal->type,
+          //           NULL), type_to_string(type_annotation->type,
+          //                          type_annotation->typeName)));
 
-            break;
-          }
+          //   break;
+          // }
         }
       }
     }

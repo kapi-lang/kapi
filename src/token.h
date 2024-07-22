@@ -65,15 +65,6 @@ typedef enum TokenType {
   TOKEN_FALSE,
   TOKEN_TRUE,
 
-  // Types
-  TOKEN_TYPE_STRUCT,
-  TOKEN_TYPE_VOID,
-  TOKEN_TYPE_NUMBER,
-  TOKEN_TYPE_INTEGER,
-  TOKEN_TYPE_FLOAT,
-  TOKEN_TYPE_BOOLEAN,
-  TOKEN_TYPE_STRING,
-
   // Keywords
   TOKEN_PRINT,
   TOKEN_IF,
@@ -112,6 +103,23 @@ typedef struct Token {
 Token token_create(TokenType type, const char *lexeme, size_t line,
                    size_t column);
 
-const char *token_to_string(TokenType type, const char *extra);
+inline const char *token_to_string(TokenType type) {
+  switch (type) {
+  case TOKEN_STRING:
+    return "String";
+
+  case TOKEN_BOOLEAN:
+    return "Boolean";
+
+  case TOKEN_FLOAT:
+    return "Float";
+
+  case TOKEN_INTEGER:
+    return "Integer";
+
+  default:
+    return "?";
+  }
+}
 
 #endif

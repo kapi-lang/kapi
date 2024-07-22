@@ -22,7 +22,6 @@ Empty value is defined with the keyword `nil`, instead of `undefined` or `null` 
 - `Float` is a floating-point value
 - `Bool` is a boolean value
 - `String` is a string value
-- `Void` is a absence of value
 
 ## Number
 

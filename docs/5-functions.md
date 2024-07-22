@@ -36,7 +36,7 @@ fn greet() String {
 ## Without Return Values
 
 ```
-fn greet() Void {
+fn greet() {
   var person: String = "World";
   var greeting: String = "Hello, " + person + "!";
 

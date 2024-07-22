@@ -11,8 +11,43 @@ typedef struct Expression Expression;
 typedef struct DeclarationStatement DeclarationStatement;
 typedef struct Statement Statement;
 
+typedef enum TypeAnnotationType {
+  TYPE_STRUCT,
+  TYPE_VOID,
+  TYPE_NUMBER,
+  TYPE_INTEGER,
+  TYPE_FLOAT,
+  TYPE_BOOLEAN,
+  TYPE_STRING,
+} TypeAnnotationType;
+
+inline const char *type_to_string(TypeAnnotationType type, const char *extra) {
+  switch (type) {
+  case TYPE_STRUCT:
+    return extra;
+
+  case TYPE_VOID:
+    return "Void";
+
+  case TYPE_STRING:
+    return "String";
+
+  case TYPE_BOOLEAN:
+    return "Boolean";
+
+  case TYPE_FLOAT:
+    return "Float";
+
+  case TYPE_INTEGER:
+    return "Integer";
+
+  default:
+    return "?";
+  }
+}
+
 typedef struct TypeAnnotation {
-  TokenType type;
+  TypeAnnotationType type;
   const char *typeName;
   bool optional;
 } TypeAnnotation;

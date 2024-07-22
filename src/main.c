@@ -11,8 +11,7 @@
  * kapi javascript <filename>
  * kapi brightscript <filename>
  */
-
-int main(int _argc, char const *argv[]) {
+int main(int argc, char const *argv[]) {
   const char *platform = argv[1];
   const char *filename = argv[2];
 
