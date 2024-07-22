@@ -7,9 +7,11 @@ import { cwd, stdout } from 'node:process';
 // import cssnano from "cssnano";
 // import autoprefixer from "autoprefixer";
 
+const ROOT = path.join(cwd(), '..', '..');
+
 export default defineConfig({
   input: {
-    index: "../../examples/playground.kapi",
+    index: path.join(ROOT, 'examples', 'playground.kapi'),
   },
   output: {
     format: 'esm',
@@ -28,9 +30,9 @@ export default defineConfig({
 function equal_script() {
   return {
     name: "equal-script",
-    async transform(source, id) {
+    transform(source, id) {
       try {
-        const kapi = await spawnSync(path.join(cwd(), '..', '..', 'build', 'kapi'), ['javascript', id]);
+        const kapi = spawnSync(path.join(ROOT, 'build', 'kapi'), ['javascript', id]);
 
         const kapi_stdout = kapi.stdout.toString('utf-8')
           .split(/(\r?\n)/g);

@@ -1,18 +1,18 @@
-const Enum = {
-  is(value, enumerator) {
-    if (typeof enumerator === 'function')
-      return value.$typeof === enumerator;
+import { Enum } from "@kapi-lang/std";
 
-    return value === enumerator;
-  },
-  value(value, at) {
-    if (typeof value === "object")
-      return value['arg' + at];
+/*
 
-    return value;
-  }
-};
+Input:
 
+struct Data;
+
+enum Result {
+  Ok(Int, Data),
+  Err(Int, String),
+}
+
+Output:
+*/
 const Result = {
   Ok(arg0, arg1) {
     return {

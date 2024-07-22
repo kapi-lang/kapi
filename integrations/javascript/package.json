@@ -4,11 +4,12 @@
   "license": "UNLICENSED",
   "type": "module",
   "devDependencies": {
-    "@babel/generator": "7.24.9",
-    "@types/node": "20.14.10",
+    "@babel/generator": "7.24.10",
+    "@types/babel__generator": "^7.6.8",
+    "@types/node": "20.14.11",
     "autoprefixer": "^10.4.19",
     "cssnano": "^7.0.4",
     "postcss": "^8.4.39",
-    "rollup": "4.18.1"
+    "rollup": "4.19.0"
   }
 }
