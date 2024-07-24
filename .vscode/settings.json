@@ -33,6 +33,7 @@
     "variant": "c",
     "bitset": "c",
     "__memory": "c",
-    "locale": "c"
+    "locale": "c",
+    "token.h": "c"
   },
 }

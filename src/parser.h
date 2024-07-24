@@ -12,17 +12,21 @@ typedef struct DeclarationStatement DeclarationStatement;
 typedef struct Statement Statement;
 
 typedef enum TypeAnnotationType {
-  TYPE_STRUCT,
   TYPE_VOID,
   TYPE_NUMBER,
   TYPE_INTEGER,
   TYPE_FLOAT,
   TYPE_BOOLEAN,
   TYPE_STRING,
+  TYPE_STRUCT,
+  TYPE_LIST,
 } TypeAnnotationType;
 
 inline const char *type_to_string(TypeAnnotationType type, const char *extra) {
   switch (type) {
+  case TYPE_LIST:
+    return extra;
+
   case TYPE_STRUCT:
     return extra;
 
@@ -46,10 +50,21 @@ inline const char *type_to_string(TypeAnnotationType type, const char *extra) {
   }
 }
 
+typedef struct TypeAnnotationList {
+  TypeAnnotation *element_type;
+} TypeAnnotationList;
+
+typedef struct TypeAnnotationStruct {
+  const char *type_name;
+} TypeAnnotationStruct;
+
 typedef struct TypeAnnotation {
   TypeAnnotationType type;
-  const char *typeName;
   bool optional;
+  union {
+    TypeAnnotationStruct *structure;
+    TypeAnnotationList *list;
+  } as;
 } TypeAnnotation;
 
 typedef struct Identifier {
@@ -118,6 +133,11 @@ typedef struct ObjectExpression {
   size_t length;
 } ObjectExpression;
 
+typedef struct ArrayExpression {
+  Expression **elements;
+  size_t length;
+} ArrayExpression;
+
 typedef struct MemberExpression {
   Expression *object;
   Expression *property;
@@ -135,6 +155,7 @@ typedef enum ExpressionType {
   EXPRESSION_GROUP,
   EXPRESSION_CALL,
   EXPRESSION_OBJECT,
+  EXPRESSION_ARRAY,
   EXPRESSION_MEMBER,
 } ExpressionType;
 
@@ -151,6 +172,7 @@ struct Expression {
     AssignmentExpression *assignment;
     CallExpression *call;
     ObjectExpression *object;
+    ArrayExpression *array;
     MemberExpression *member;
   } as;
 };

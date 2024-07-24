@@ -1,5 +1,8 @@
-# var arr: Int[] = [1, 2, 3];
+struct Data {
+  message: String;
+}
 
-for (item in arr) {
-  print(item);
+enum Result {
+  Ok(Int, Data),
+  Error(Int, String)
 }

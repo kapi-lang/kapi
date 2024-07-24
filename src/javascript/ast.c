@@ -179,6 +179,21 @@ static json_object *ast_update_expression(const UpdateExpression *expression) {
 
 static json_object *ast_expression(const Expression *expression) {
   switch (expression->type) {
+  case EXPRESSION_ARRAY: {
+    json_object *jexpr = ast_object_typed("ArrayExpression");
+
+    json_object *jelements = json_object_new_array();
+    json_object_object_add(jexpr, "elements", jelements);
+
+    FOR_I(expression->as.array->length, {
+      const Expression *element = expression->as.array->elements[i];
+
+      json_object_array_put_idx(jelements, i, ast_expression(element));
+    });
+
+    return jexpr;
+  }
+
   case EXPRESSION_MEMBER: {
     json_object *jexpr = ast_object_typed("MemberExpression");
 

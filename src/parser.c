@@ -288,8 +288,7 @@ static Expression *parser_primary() {
     Expression *expr = NEW(Expression);
     GroupExpression *group_expr = NEW(GroupExpression);
 
-    (void)parser_consume(TOKEN_LEFT_PAREN,
-                         "expect '(' before group expression");
+    (void)parser_advance();
 
     group_expr->expression = parser_expression();
 
@@ -303,8 +302,7 @@ static Expression *parser_primary() {
   }
 
   case TOKEN_LEFT_BRACE: {
-    (void)parser_consume(TOKEN_LEFT_BRACE,
-                         "expect '{' before an struct initialization");
+    (void)parser_advance();
 
     ObjectExpression *obj_expr = NEW(ObjectExpression);
     obj_expr->properties = NULL;
@@ -337,6 +335,32 @@ static Expression *parser_primary() {
     Expression *expr = NEW(Expression);
     expr->type = EXPRESSION_OBJECT;
     expr->as.object = obj_expr;
+
+    return expr;
+  }
+
+  case TOKEN_LEFT_BRACKET: {
+    (void)parser_advance();
+
+    ArrayExpression *arr_expr = NEW(ArrayExpression);
+    arr_expr->elements = NULL;
+    arr_expr->length = 0;
+
+    do {
+      if (parser_check(TOKEN_COMMA))
+        (void)parser_advance();
+
+      Expression *elm_expr = parser_expression();
+
+      ARRAY_PUSH(Expression *, arr_expr->elements, arr_expr->length, elm_expr);
+    } while (parser_check(TOKEN_COMMA));
+
+    (void)parser_consume(TOKEN_RIGHT_BRACKET,
+                         "expect ']' after an list initialization");
+
+    Expression *expr = NEW(Expression);
+    expr->type = EXPRESSION_ARRAY;
+    expr->as.object = arr_expr;
 
     return expr;
   }
@@ -585,7 +609,28 @@ static Statement *parser_variable() {
     id->typeAnnotation->type = TYPE_FLOAT;
   } else {
     id->typeAnnotation->type = TYPE_STRUCT;
-    id->typeAnnotation->typeName = var_type.lexeme;
+    id->typeAnnotation->as.structure = NEW(TypeAnnotationStruct);
+    id->typeAnnotation->as.structure->type_name = var_type.lexeme;
+  }
+
+  if (parser_check(TOKEN_LEFT_BRACKET)) {
+    (void)parser_advance();
+
+    TypeAnnotation *next_type_annotation = NEW(TypeAnnotation);
+    next_type_annotation->type = TYPE_LIST;
+    next_type_annotation->as.list = NEW(TypeAnnotationList);
+    next_type_annotation->as.list->element_type = id->typeAnnotation;
+
+    id->typeAnnotation = next_type_annotation;
+
+    (void)parser_consume(TOKEN_RIGHT_BRACKET,
+                         "expect ']' after variable declaration");
+
+    if (parser_check(TOKEN_LEFT_BRACKET)) {
+      (void)parser_advance();
+      (void)parser_consume(TOKEN_RIGHT_BRACKET,
+                           "expect ']' after variable declaration");
+    }
   }
 
   if (parser_check(TOKEN_QUESTION_MARK)) {
@@ -641,7 +686,8 @@ static Statement *parser_struct() {
       prop->typeAnnotation->type = TYPE_FLOAT;
     } else {
       prop->typeAnnotation->type = TYPE_STRUCT;
-      prop->typeAnnotation->typeName = prop_type.lexeme;
+      prop->typeAnnotation->as.structure = NEW(TypeAnnotationStruct);
+      prop->typeAnnotation->as.structure->type_name = prop_type.lexeme;
     }
 
     if (parser_check(TOKEN_QUESTION_MARK)) {
@@ -808,7 +854,8 @@ static Statement *parser_function() {
       param->typeAnnotation->type = TYPE_FLOAT;
     } else if (param_type.type == TOKEN_IDENTIFIER) {
       param->typeAnnotation->type = TYPE_STRUCT;
-      param->typeAnnotation->typeName = param_type.lexeme;
+      param->typeAnnotation->as.structure = NEW(TypeAnnotationStruct);
+      param->typeAnnotation->as.structure->type_name = param_type.lexeme;
     } else {
       EXCEPTION("invalid type for function parameter\n");
     }
@@ -844,7 +891,9 @@ static Statement *parser_function() {
     (void)parser_advance();
   } else if (return_type.type == TOKEN_IDENTIFIER) {
     decl->as.function->returnType->type = TYPE_STRUCT;
-    decl->as.function->returnType->typeName = return_type.lexeme;
+    decl->as.function->returnType->as.structure = NEW(TypeAnnotationStruct);
+    decl->as.function->returnType->as.structure->type_name = return_type.lexeme;
+
     (void)parser_advance();
   } else {
     EXCEPTION("invalid type for function return\n");

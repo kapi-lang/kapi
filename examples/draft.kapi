@@ -1,32 +1,10 @@
-# List
-
-var a: Int[] = [ 0 ];
-
-var a: Person[] = [
-  Person {
-    name = "Equal",
-    age = 29,
-  }
-];
-
-# Nested List
-
-var a: Int[][] = [[
-  0
-]];
-
-var a: Person[][] = [[
-  Person {
-    name = "Equal",
-    age = 29,
-  }
-]];
-
 # Dictionary
 
-var a: Dict = Dict {};
+# Make sense have this?
+var a: Dict = {};
 
-var a: Dict = Dict {
+# Make sense have this?
+var a: Dict = {
   0 = true,
   name = "equal",
   age = 29,

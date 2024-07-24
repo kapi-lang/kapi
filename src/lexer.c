@@ -133,6 +133,8 @@ static TokenType lexer_identifier_type() {
   case 'e': {
     if (lexer.cursor - lexer.start > 1) {
       switch (lexer.start[1]) {
+      case 'n':
+        return lexer_check_identifier(1, 3, "num", TOKEN_ENUM);
       case 'q':
         return lexer_check_identifier(1, 1, "q", TOKEN_EQUAL);
       case 'l':

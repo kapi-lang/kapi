@@ -54,6 +54,7 @@ typedef enum TokenType {
   TOKEN_VAR,
   TOKEN_STRUCT,
   TOKEN_FUNCTION,
+  TOKEN_ENUM,
 
   // Values
   TOKEN_IDENTIFIER,

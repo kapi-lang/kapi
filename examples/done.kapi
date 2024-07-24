@@ -230,3 +230,27 @@ for (n in 1 to limit) {
 for (n in 10 downto 1) {
   print(n);
 }
+
+# List
+
+var a: Int[] = [ 0 ];
+
+var a: Person[] = [
+  {
+    name = "Equal",
+    age = 29,
+  }
+];
+
+# Nested List
+
+var a: Int[][] = [[
+  0
+]];
+
+var a: Person[][] = [[
+  {
+    name = "Equal",
+    age = 29,
+  }
+]];
